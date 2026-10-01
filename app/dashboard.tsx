@@ -1,6 +1,6 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
-import { LogOut } from 'lucide-react';
+import { LogOut, LayoutDashboard, Building2, ClipboardPen, UsersRound, UserRound } from 'lucide-react';
 import { ThemeToggle } from './theme';
 import { supabase } from '@/lib/supabase';
 import { currentProfile, currentSeason, listCampuses, signOut, canSeeAllCampuses, ROLE_LABELS, friendly, type Profile, type Campus } from '@/lib/koc';
@@ -14,6 +14,7 @@ import './management.css';
 
 export type Tab = 'overview' | 'campus' | 'enter' | 'accounts' | 'profile';
 export type Jump = (tab: Tab, opts?: { campusId?: string; weekEnding?: string }) => void;
+const navIcons = { overview: LayoutDashboard, campus: Building2, enter: ClipboardPen, accounts: UsersRound, profile: UserRound };
 
 function tabsFor(p: Profile): { id: Tab; label: string }[] {
   if (p.status !== 'active') return [{ id: 'profile', label: 'My profile' }];
@@ -85,7 +86,7 @@ export default function Dashboard() {
   return <div className="app-shell">
     <header className="site-header">
       <a className="brand" href="/dashboard"><span className="logo-box"><img src="/kharis-logo.png" alt="Kharis dove" /></span><span>KHARIS<span className="brand-small">ON CAMPUS</span></span></a>
-      <nav aria-label="Main navigation">{tabs.map((t) => <button key={t.id} className={tab === t.id ? 'nav-active' : ''} onClick={() => jump(t.id)}>{t.label}</button>)}</nav>
+      <nav aria-label="Main navigation">{tabs.map((t) => { const Icon = navIcons[t.id]; return <button key={t.id} aria-current={tab === t.id ? 'page' : undefined} className={tab === t.id ? 'nav-active' : ''} onClick={() => jump(t.id)}><Icon className="nav-icon" size={20} aria-hidden="true" /><span>{t.label}</span></button>; })}</nav>
       <div className="header-actions">
         <ThemeToggle />
         {profile && <button className="user-chip" onClick={() => jump('profile')} title="My profile"><span className="user-name">{profile.full_name}</span><span className="role-badge">{ROLE_LABELS[profile.role]}</span></button>}
@@ -118,7 +119,7 @@ export default function Dashboard() {
           {tab === 'accounts' && profile.role === 'admin' && <Accounts profile={profile} campuses={campuses} />}
           {tab === 'profile' && <ProfileView profile={profile} onChange={load} />}
         </>}
-      <footer className="page-footer"><span>© Kharis On Campus · United in purpose.</span><span>Your campus, one week at a time.</span></footer>
+      <footer className="page-footer"><span>© Kharis On Campus</span></footer>
     </main>
   </div>;
 }

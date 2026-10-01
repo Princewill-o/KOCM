@@ -10,6 +10,7 @@ import { ThemeToggle } from './theme';
 import { signIn, signUp, requestPasswordReset, setNewPassword, listCampuses, friendly, type Campus } from '@/lib/koc';
 import { supabase } from '@/lib/supabase';
 import './management.css';
+import './auth-design.css';
 
 type Mode = 'login' | 'signup' | 'forgot' | 'update';
 
@@ -97,13 +98,13 @@ export default function AuthPage({ mode = 'login' }: { mode?: Mode }) {
   return <main className="auth-layout">
     <section className="auth-brand-panel">
       <Link className="brand" href="/"><span className="logo-box"><img src="/kharis-logo.png" alt="Kharis dove" /></span><span>KHARIS<span className="brand-small">ON CAMPUS</span></span></Link>
-      <div className="auth-statement"><div className="eyebrow">ONE COMMUNITY. ONE MISSION.</div><h1>Every campus.<br />Every life.<br /><span>Every possibility.</span></h1><p>Your campus story, one week at a time.<br />Prayer. Outreach. Fellowship.</p></div>
-      <div className="auth-brand-bottom"><img src="/kharis-logo.png" alt="" /><span>KHARIS ON CAMPUS<br /><small>United in purpose.</small></span></div>
+      <div className="auth-brand-description"><span className="auth-section-label">MANAGEMENT PORTAL</span><h1>Kharis<br />On Campus</h1><p>Manage weekly reports and review<br />your campus statistics.</p></div>
+      <div className="auth-brand-bottom"><span>Prayer · Outreach · Fellowship</span><span className="auth-brand-dot" /></div>
     </section>
     <section className="auth-form-panel">
       <div className="auth-top"><span>{top.text}</span><a href={top.href}>{top.link}</a><ThemeToggle /></div>
       <div className="auth-content">
-        <span className="auth-kicker">KHARIS ON CAMPUS MANAGEMENT</span>
+        <span className="auth-kicker"><span /> KHARIS ON CAMPUS MANAGEMENT</span>
         <h2>{title}</h2>
         <p>{lead}</p>
         {notice ? <div className="auth-notice" role="status"><MailCheck size={20} /><span>{notice}</span></div> :
@@ -124,9 +125,9 @@ export default function AuthPage({ mode = 'login' }: { mode?: Mode }) {
           {error && <p role="alert" className="form-error">{error}</p>}
           <button className="button button-yellow auth-submit" disabled={isSubmitting || !ready}>{isSubmitting ? 'Please wait…' : !ready ? 'Checking link…' : button}<ArrowRight size={18} /></button>
         </form>}
-        <div className="secure-note"><ShieldCheck size={16} /><span>{mode === 'signup' ? 'An administrator verifies your campus before granting access.' : 'Secured by Supabase Auth. Access depends on your role.'}</span></div>
+        <div className="secure-note"><ShieldCheck size={16} /><span>{mode === 'signup' ? 'An administrator verifies your campus before granting access.' : 'Secure access to your campus workspace.'}</span></div>
       </div>
-      <footer className="auth-footer"><span>© Kharis On Campus</span><span>United in purpose.</span></footer>
+      <footer className="auth-footer"><span>© Kharis On Campus</span></footer>
     </section>
   </main>;
 }

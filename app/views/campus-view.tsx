@@ -1,26 +1,29 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { Users, Clock3, Megaphone, Footprints, CalendarClock, ArrowRight, Pencil, Trash2 } from 'lucide-react';
+import { Users, Clock3, Megaphone, Footprints, CalendarClock, ArrowRight, Pencil, Trash2, Download } from 'lucide-react';
 import { listReports, deleteReport, friendly, type Profile, type Campus, type Report } from '@/lib/koc';
 import { buildWeeks, deadlineLabel, formatDate, hours, shortDate, type Season } from '@/lib/reporting';
+import type { demoData } from '@/lib/demo';
 import type { Jump } from '../dashboard';
+import { completionRows, downloadWorkbook } from '@/lib/analytics';
 
-type Props = { season: Season; profile: Profile; campuses: Campus[]; campusId: string; setCampusId: (id: string) => void; jump: Jump };
+type Props = { demo?: ReturnType<typeof demoData>; season: Season; profile: Profile; campuses: Campus[]; campusId: string; setCampusId: (id: string) => void; jump: Jump };
 
-export default function CampusView({ season, profile, campuses, campusId, setCampusId, jump }: Props) {
-  const [reports, setReports] = useState<Report[] | null>(null);
+export default function CampusView({ season, profile, campuses, campusId, setCampusId, jump, demo }: Props) {
+  const [reports, setReports] = useState<Report[] | null>(demo ? demo.reports.filter(r => r.campus_id === campusId) : null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState('');
+  const [exporting, setExporting] = useState(false);
   const isRep = profile.role === 'campus';
   const id = isRep ? profile.campus_id ?? '' : campusId;
   const campus = campuses.find((c) => c.id === id);
 
   useEffect(() => {
-    if (!id) return;
+    if (!id || demo) return;
     let alive = true;
     listReports(id, season.id).then((r) => { if (alive) setReports(r); }).catch((e) => { if (alive) setError(friendly(e)); });
     return () => { alive = false; };
-  }, [id, season.id]);
+  }, [id, season.id, demo]);
 
   async function remove(r: Report) {
     if (!window.confirm(`Delete the report for week ending ${formatDate(r.week_ending)}? This cannot be undone.`)) return;
@@ -34,6 +37,18 @@ export default function CampusView({ season, profile, campuses, campusId, setCam
     attendance: a.attendance + r.attendance, prayer: a.prayer + r.prayer_minutes, evangelism: a.evangelism + r.evangelism_minutes, outings: a.outings + r.outreach_outings,
   }), { attendance: 0, prayer: 0, evangelism: 0, outings: 0 });
   const weeks = reports ? buildWeeks(season, reports) : [];
+  const completed = weeks.filter(w => w.status === 'submitted' || w.status === 'late').length;
+  const overdue = weeks.filter(w => w.status === 'missing').length;
+  const pending = weeks.filter(w => w.status === 'due').length;
+  async function exportExcel() {
+    if (!reports) return;
+    setExporting(true); setError('');
+    const weekly = reports.map(r => ({ ...r, campuses_reported: 1 }));
+    try {
+      await downloadWorkbook([{ campus_id: id, campus_name: campus?.name ?? 'Campus', region: campus?.region ?? '', reports: reports.length, late_reports: reports.filter(r => r.is_late).length, attendance: totals.attendance, prayer_minutes: totals.prayer, evangelism_minutes: totals.evangelism, outreach_outings: totals.outings, last_week: [...reports].sort((a, b) => b.week_ending.localeCompare(a.week_ending))[0]?.week_ending ?? null }], weekly, completionRows(season, 1, weekly), season, !!demo, reports);
+    } catch { setError('The Excel download failed. Please try again.'); }
+    finally { setExporting(false); }
+  }
 
   return <>
     <div className="page-heading">
@@ -42,7 +57,7 @@ export default function CampusView({ season, profile, campuses, campusId, setCam
     </div>
     {error && <div className="management-alert" role="alert">{error}</div>}
     {!reports ? (!error && <p role="status" className="loading-line">Loading campus reports…</p>) : <>
-      <div className="source-bar"><span><span className="small-dot" />{season.name} · {formatDate(season.start_date)} – {formatDate(season.end_date)}</span><span>{reports.length} weekly reports submitted</span></div>
+      <div className="source-bar"><span><span className="small-dot" />{season.name} · {formatDate(season.start_date)} – {formatDate(season.end_date)}</span><span>{reports.length} {demo ? 'sample reports' : 'weekly reports submitted'}</span></div>
       <div className="deadline-banner"><CalendarClock size={22} /><div><strong>Every Friday, before {deadlineLabel(season.deadline_hour)}</strong><p>{season.time_zone} time. Late submissions are recorded as late; missing weeks stay unreported.</p></div>
         <button className="text-button" onClick={() => jump('enter', { campusId: id })}>{isRep ? 'Update this week' : 'Enter stats for this campus'} <ArrowRight size={16} /></button></div>
       <section className="management-stats" aria-label="Campus totals">
@@ -50,6 +65,7 @@ export default function CampusView({ season, profile, campuses, campusId, setCam
           { label: 'Evangelism time', value: hours(totals.evangelism), Icon: Megaphone }, { label: 'Outreach outings', value: totals.outings, Icon: Footprints }].map(({ label, value, Icon }, i) =>
           <div className={`stat-card ${i === 0 ? 'featured' : ''}`} key={label}><div className="stat-top"><span>{label}</span><Icon size={20} /></div><div className="stat-value">{reports.length ? value : '—'}</div><small>{reports.length ? 'Across submitted weeks' : 'No reports yet'}</small></div>)}
       </section>
+      <section className="panel padded completion-panel"><div className="panel-heading"><div><h2>Report completion</h2><p>Opened weeks only. Future reports are excluded.</p></div><button className="button" disabled={exporting} onClick={exportExcel}><Download size={17} />{exporting ? 'Preparing Excel…' : 'Download Excel'}</button></div><div className="completion-cards"><div><span>Expected</span><strong>{completed + overdue + pending}</strong></div><div><span>Completed</span><strong>{completed}</strong></div><div><span>Not yet done</span><strong>{overdue + pending}</strong></div><div><span>Overdue</span><strong>{overdue}</strong></div></div><p className="completion-caption">{pending} reports still within the Friday deadline.</p></section>
       <Trends reports={reports} />
       <section className="panel padded reporting-history"><h2>Weekly record</h2><p>Attendance counts visits, not unique people. Minutes are entered as total activity duration.</p>
         <div className="management-table-wrap"><table><thead><tr><th>Week ending</th><th>Status</th><th>Attendance</th><th>Prayer</th><th>Evangelism</th><th>Outings</th><th>Notes</th><th /></tr></thead>
@@ -59,8 +75,8 @@ export default function CampusView({ season, profile, campuses, campusId, setCam
               <td>{formatDate(w.weekEnding)}</td><td><span className={`week-status ${w.status}`}>{w.status}</span></td>
               <td>{r?.attendance ?? '—'}</td><td>{r ? hours(r.prayer_minutes) : '—'}</td><td>{r ? hours(r.evangelism_minutes) : '—'}</td><td>{r?.outreach_outings ?? '—'}</td>
               <td className="notes-cell" title={r?.notes}>{r?.notes || '—'}</td>
-              <td className="row-actions">{w.status !== 'upcoming' && <button className="icon-text" onClick={() => jump('enter', { campusId: id, weekEnding: w.weekEnding })} aria-label={`${r ? 'Edit' : 'Add'} week ending ${formatDate(w.weekEnding)}`}><Pencil size={14} />{r ? 'Edit' : 'Add'}</button>}
-                {r && profile.role === 'admin' && <button className="icon-text danger" disabled={busy === r.id} onClick={() => remove(r)} aria-label={`Delete week ending ${formatDate(w.weekEnding)}`}><Trash2 size={14} /></button>}</td>
+              <td className="row-actions">{!demo && w.status !== 'upcoming' && <button className="icon-text" onClick={() => jump('enter', { campusId: id, weekEnding: w.weekEnding })} aria-label={`${r ? 'Edit' : 'Add'} week ending ${formatDate(w.weekEnding)}`}><Pencil size={14} />{r ? 'Edit' : 'Add'}</button>}
+                {!demo && r && profile.role === 'admin' && <button className="icon-text danger" disabled={busy === r.id} onClick={() => remove(r)} aria-label={`Delete week ending ${formatDate(w.weekEnding)}`}><Trash2 size={14} /></button>}</td>
             </tr>;
           })}</tbody></table></div>
       </section>
