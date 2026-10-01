@@ -41,6 +41,10 @@ npm run build
 
 The Supabase URL and publishable key are in `lib/supabase.ts` (they are safe to ship to browsers; security comes from RLS).
 
+## Deploying
+
+Vercel builds this as a standard Next.js app (`vercel.json` runs `next build`; every page is static and talks to Supabase from the browser). `npm run build` still produces the Cloudflare/vinext build if you ever host there.
+
 ## Supabase dashboard settings to check
 
 - **Authentication → URL Configuration:** set *Site URL* to the live address of this app, and add `http://localhost:5173/**` plus the live URL with `/**` to *Redirect URLs* — needed for sign-up confirmation and password-reset links.
