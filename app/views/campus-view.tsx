@@ -1,0 +1,90 @@
+'use client';
+import { useEffect, useState } from 'react';
+import { Users, Clock3, Megaphone, Footprints, CalendarClock, ArrowRight, Pencil, Trash2 } from 'lucide-react';
+import { listReports, deleteReport, friendly, type Profile, type Campus, type Report } from '@/lib/koc';
+import { buildWeeks, deadlineLabel, formatDate, hours, shortDate, type Season } from '@/lib/reporting';
+import type { Jump } from '../dashboard';
+
+type Props = { season: Season; profile: Profile; campuses: Campus[]; campusId: string; setCampusId: (id: string) => void; jump: Jump };
+
+export default function CampusView({ season, profile, campuses, campusId, setCampusId, jump }: Props) {
+  const [reports, setReports] = useState<Report[] | null>(null);
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState('');
+  const isRep = profile.role === 'campus';
+  const id = isRep ? profile.campus_id ?? '' : campusId;
+  const campus = campuses.find((c) => c.id === id);
+
+  useEffect(() => {
+    if (!id) return;
+    let alive = true;
+    listReports(id, season.id).then((r) => { if (alive) setReports(r); }).catch((e) => { if (alive) setError(friendly(e)); });
+    return () => { alive = false; };
+  }, [id, season.id]);
+
+  async function remove(r: Report) {
+    if (!window.confirm(`Delete the report for week ending ${formatDate(r.week_ending)}? This cannot be undone.`)) return;
+    setBusy(r.id); setError('');
+    try { await deleteReport(r.id); setReports((prev) => prev?.filter((x) => x.id !== r.id) ?? null); }
+    catch (e) { setError(friendly(e)); }
+    finally { setBusy(''); }
+  }
+
+  const totals = (reports ?? []).reduce((a, r) => ({
+    attendance: a.attendance + r.attendance, prayer: a.prayer + r.prayer_minutes, evangelism: a.evangelism + r.evangelism_minutes, outings: a.outings + r.outreach_outings,
+  }), { attendance: 0, prayer: 0, evangelism: 0, outings: 0 });
+  const weeks = reports ? buildWeeks(season, reports) : [];
+
+  return <>
+    <div className="page-heading">
+      <div><div className="eyebrow">YOUR CAMPUS. YOUR STORY.</div><h1>{campus?.name ?? profile.campus?.name ?? 'Campus'}</h1><p>{campus?.region ? `${campus.region} · ` : ''}Small steps. Shared faith. A growing community.</p></div>
+      {!isRep && <label className="campus-picker">View campus<select value={id} onChange={(e) => setCampusId(e.target.value)}>{campuses.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>}
+    </div>
+    {error && <div className="management-alert" role="alert">{error}</div>}
+    {!reports ? (!error && <p role="status" className="loading-line">Loading campus reports…</p>) : <>
+      <div className="source-bar"><span><span className="small-dot" />{season.name} · {formatDate(season.start_date)} – {formatDate(season.end_date)}</span><span>{reports.length} weekly reports submitted</span></div>
+      <div className="deadline-banner"><CalendarClock size={22} /><div><strong>Every Friday, before {deadlineLabel(season.deadline_hour)}</strong><p>{season.time_zone} time. Late submissions are recorded as late; missing weeks stay unreported.</p></div>
+        <button className="text-button" onClick={() => jump('enter', { campusId: id })}>{isRep ? 'Update this week' : 'Enter stats for this campus'} <ArrowRight size={16} /></button></div>
+      <section className="management-stats" aria-label="Campus totals">
+        {[{ label: 'Attendance occasions', value: totals.attendance.toLocaleString('en-GB'), Icon: Users }, { label: 'Prayer time', value: hours(totals.prayer), Icon: Clock3 },
+          { label: 'Evangelism time', value: hours(totals.evangelism), Icon: Megaphone }, { label: 'Outreach outings', value: totals.outings, Icon: Footprints }].map(({ label, value, Icon }, i) =>
+          <div className={`stat-card ${i === 0 ? 'featured' : ''}`} key={label}><div className="stat-top"><span>{label}</span><Icon size={20} /></div><div className="stat-value">{reports.length ? value : '—'}</div><small>{reports.length ? 'Across submitted weeks' : 'No reports yet'}</small></div>)}
+      </section>
+      <Trends reports={reports} />
+      <section className="panel padded reporting-history"><h2>Weekly record</h2><p>Attendance counts visits, not unique people. Minutes are entered as total activity duration.</p>
+        <div className="management-table-wrap"><table><thead><tr><th>Week ending</th><th>Status</th><th>Attendance</th><th>Prayer</th><th>Evangelism</th><th>Outings</th><th>Notes</th><th /></tr></thead>
+          <tbody>{weeks.map((w) => {
+            const r = reports.find((x) => x.week_ending === w.weekEnding);
+            return <tr key={w.weekEnding}>
+              <td>{formatDate(w.weekEnding)}</td><td><span className={`week-status ${w.status}`}>{w.status}</span></td>
+              <td>{r?.attendance ?? '—'}</td><td>{r ? hours(r.prayer_minutes) : '—'}</td><td>{r ? hours(r.evangelism_minutes) : '—'}</td><td>{r?.outreach_outings ?? '—'}</td>
+              <td className="notes-cell" title={r?.notes}>{r?.notes || '—'}</td>
+              <td className="row-actions">{w.status !== 'upcoming' && <button className="icon-text" onClick={() => jump('enter', { campusId: id, weekEnding: w.weekEnding })} aria-label={`${r ? 'Edit' : 'Add'} week ending ${formatDate(w.weekEnding)}`}><Pencil size={14} />{r ? 'Edit' : 'Add'}</button>}
+                {r && profile.role === 'admin' && <button className="icon-text danger" disabled={busy === r.id} onClick={() => remove(r)} aria-label={`Delete week ending ${formatDate(w.weekEnding)}`}><Trash2 size={14} /></button>}</td>
+            </tr>;
+          })}</tbody></table></div>
+      </section>
+    </>}
+  </>;
+}
+
+function Trends({ reports }: { reports: Report[] }) {
+  const [metric, setMetric] = useState<'attendance' | 'prayer_minutes' | 'evangelism_minutes' | 'outreach_outings'>('attendance');
+  const labels = { attendance: 'Attendance', prayer_minutes: 'Prayer minutes', evangelism_minutes: 'Evangelism minutes', outreach_outings: 'Outreach outings' };
+  const sorted = [...reports].sort((a, b) => a.week_ending.localeCompare(b.week_ending));
+  const max = Math.max(1, ...sorted.map((r) => r[metric]));
+  const nextOf = (r: Report) => { const d = new Date(`${r.week_ending}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + 7); return sorted.find((x) => x.week_ending === d.toISOString().slice(0, 10)); };
+  const pairs = sorted.filter((r) => nextOf(r)).length;
+  return <div className="management-charts">
+    <section className="panel padded"><div className="panel-heading"><div><h2>Growth in perspective</h2><p>Only this campus’s submitted reports appear here.</p></div></div>
+      <div className="management-tabs" role="group" aria-label="Chart statistic">{(Object.keys(labels) as (keyof typeof labels)[]).map((m) => <button aria-pressed={metric === m} className={metric === m ? 'active' : ''} key={m} onClick={() => setMetric(m)}>{labels[m]}</button>)}</div>
+      {!sorted.length ? <div className="empty-state"><Users size={30} /><h3>The story starts with the first report.</h3><p>Submit weekly statistics to see progress through May.</p></div>
+        : <div className="live-chart" role="img" aria-label={`${labels[metric]} by submitted week`}>{sorted.map((r) => <div className="live-column" key={r.id}><strong>{r[metric]}</strong><div className="live-bar" style={{ height: Math.max(2, (r[metric] / max) * 170) }} /><span>{shortDate(r.week_ending)}</span></div>)}</div>}
+      <p className="chart-explainer">Missing weeks are not treated as zero.</p></section>
+    <section className="panel padded"><span className="eyebrow">STEPPING OUT & SHOWING UP</span><h2>Outreach and attendance</h2><p>Compare each week’s outings with attendance that week and the following week.</p>
+      {pairs < 3 ? <div className="empty-state"><Footprints size={30} /><h3>Building the picture.</h3><p>At least three consecutive week comparisons are needed before interpreting a pattern. {pairs} available so far.</p></div>
+        : <p className="insight-note">{pairs} consecutive week comparisons. Look for whether higher outreach activity is followed by higher attendance.</p>}
+      {!!sorted.length && <div className="management-table-wrap"><table><thead><tr><th>Week</th><th>Outings</th><th>Attendance</th><th>Next week</th></tr></thead><tbody>{sorted.map((r) => <tr key={r.id}><td>{shortDate(r.week_ending)}</td><td>{r.outreach_outings}</td><td>{r.attendance}</td><td>{nextOf(r)?.attendance ?? '—'}</td></tr>)}</tbody></table></div>}
+      <p className="chart-explainer">A relationship is not proof that outreach caused a change. Events, term dates, and other factors also affect attendance.</p></section>
+  </div>;
+}
