@@ -1,6 +1,7 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
 import { LogOut, LayoutDashboard, Building2, ClipboardPen, UsersRound, UserRound, GraduationCap, BookOpen, Bell, MapPin, ChartNoAxesCombined, ContactRound } from 'lucide-react';
+import FloatingNav from './components/floating-nav';
 import { ThemeToggle } from './theme';
 import { supabase } from '@/lib/supabase';
 import { currentProfile, currentSeason, listCampuses, signOut, canSeeAllCampuses, ROLE_LABELS, friendly, type Profile, type Campus } from '@/lib/koc';
@@ -109,13 +110,14 @@ export default function Dashboard() {
   return <div className="app-shell">
     <header className="site-header">
       <a className="brand" href="/dashboard"><span className="logo-box"><img src="/kharis-logo.png" alt="Kharis dove" /></span><span>KHARIS<span className="brand-small">ON CAMPUS</span></span></a>
-      <nav aria-label="Main navigation">{tabs.map((t) => { const Icon = navIcons[t.id]; return <button key={t.id} aria-current={tab === t.id ? 'page' : undefined} className={tab === t.id ? 'nav-active' : ''} onClick={() => jump(t.id)}><Icon className="nav-icon" size={20} aria-hidden="true" /><span>{t.label}{t.id === 'notifications' && unread > 0 && <span className="notification-count"> {unread}</span>}</span></button>; })}</nav>
+
       <div className="header-actions">
         <ThemeToggle />
         {profile && <button className="user-chip" onClick={() => jump('profile')} title="My profile"><span className="user-name">{profile.full_name}</span><span className="role-badge">{ROLE_LABELS[profile.role]}</span></button>}
         <button className="quiet-link" onClick={logout} aria-label="Log out" title="Log out"><LogOut size={18} /></button>
       </div>
     </header>
+    <FloatingNav items={tabs.map(item => ({ ...item, icon: navIcons[item.id] }))} active={tab} unread={unread} onSelect={next => jump(next)} />
     <main className="workspace">
       <div className="breadcrumb">Kharis On Campus Management<span>/ {tabs.find((t) => t.id === tab)?.label}</span></div>
       {error && <div className="management-alert" role="alert">{error}</div>}
