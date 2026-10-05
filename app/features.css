@@ -1,0 +1,140 @@
+.feature-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+.feature-wide {
+  grid-column: 1/-1;
+}
+.management-form input:not([type="checkbox"]),
+.management-form select,
+.management-form textarea {
+  width: 100%;
+  border: 1px solid #ddd6c8;
+  border-radius: 8px;
+  padding: 11px;
+  background: var(--background);
+  color: var(--foreground);
+}
+.management-form textarea {
+  min-height: 90px;
+}
+.feature-checks {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+}
+.feature-checks label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.feature-section {
+  margin-top: 24px;
+}
+.feature-low {
+  color: #a63429;
+}
+.feature-notification,
+.feature-material {
+  padding: 20px 0;
+  border-bottom: 1px solid #eee6d9;
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: center;
+}
+.feature-notification.unread {
+  border-left: 3px solid #c99100;
+  padding-left: 16px;
+}
+.feature-notification h2,
+.feature-material h3 {
+  margin: 8px 0;
+}
+.feature-map-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+.feature-uk-map {
+  display: block;
+  width: 100%;
+  max-height: 600px;
+  background: #edf3f3;
+  border-radius: 16px;
+}
+.feature-land {
+  fill: #e3e1cf;
+  stroke: #b3b7a9;
+  stroke-width: 2;
+}
+.feature-uk-map [role="button"] {
+  cursor: pointer;
+}
+.feature-uk-map [role="button"]:focus circle {
+  stroke: #232018;
+  stroke-width: 4;
+}
+.feature-campus-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 20px;
+  max-height: 420px;
+  overflow: auto;
+}
+.feature-campus-choice {
+  text-align: left;
+  padding: 12px;
+  border: 1px solid #e5ded1;
+  border-radius: 8px;
+  background: var(--card);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.feature-campus-choice.selected {
+  border-color: #bc8f23;
+  background: #fff9e7;
+}
+.feature-reader {
+  margin-top: 24px;
+  user-select: none;
+}
+.feature-reader-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+}
+.feature-reader-canvas {
+  min-height: 240px;
+  background: white;
+}
+.feature-reader-canvas canvas {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: auto;
+}
+@media (max-width: 760px) {
+  .feature-form,
+  .feature-map-layout {
+    grid-template-columns: 1fr;
+  }
+  .feature-wide {
+    grid-column: auto;
+  }
+  .feature-notification,
+  .feature-material {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+@media print {
+  .feature-reader {
+    display: none !important;
+  }
+}

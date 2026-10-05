@@ -59,7 +59,7 @@ export default function CampusView({ season, profile, campuses, campusId, setCam
     {!reports ? (!error && <p role="status" className="loading-line">Loading campus reports…</p>) : <>
       <div className="source-bar"><span><span className="small-dot" />{season.name} · {formatDate(season.start_date)} – {formatDate(season.end_date)}</span><span>{reports.length} {demo ? 'sample reports' : 'weekly reports submitted'}</span></div>
       <div className="deadline-banner"><CalendarClock size={22} /><div><strong>Every Friday, before {deadlineLabel(season.deadline_hour)}</strong><p>{season.time_zone} time. Late submissions are recorded as late; missing weeks stay unreported.</p></div>
-        <button className="text-button" onClick={() => jump('enter', { campusId: id })}>{isRep ? 'Update this week' : 'Enter stats for this campus'} <ArrowRight size={16} /></button></div>
+        {profile.role !== 'cluster' && <button className="text-button" onClick={() => jump('enter', { campusId: id })}>{isRep ? 'Update this week' : 'Enter stats for this campus'} <ArrowRight size={16} /></button>}</div>
       <section className="management-stats" aria-label="Campus totals">
         {[{ label: 'Attendance occasions', value: totals.attendance.toLocaleString('en-GB'), Icon: Users }, { label: 'Prayer time', value: hours(totals.prayer), Icon: Clock3 },
           { label: 'Evangelism time', value: hours(totals.evangelism), Icon: Megaphone }, { label: 'Outreach outings', value: totals.outings, Icon: Footprints }].map(({ label, value, Icon }, i) =>
@@ -75,7 +75,7 @@ export default function CampusView({ season, profile, campuses, campusId, setCam
               <td>{formatDate(w.weekEnding)}</td><td><span className={`week-status ${w.status}`}>{w.status}</span></td>
               <td>{r?.attendance ?? '—'}</td><td>{r ? hours(r.prayer_minutes) : '—'}</td><td>{r ? hours(r.evangelism_minutes) : '—'}</td><td>{r?.outreach_outings ?? '—'}</td>
               <td className="notes-cell" title={r?.notes}>{r?.notes || '—'}</td>
-              <td className="row-actions">{!demo && w.status !== 'upcoming' && <button className="icon-text" onClick={() => jump('enter', { campusId: id, weekEnding: w.weekEnding })} aria-label={`${r ? 'Edit' : 'Add'} week ending ${formatDate(w.weekEnding)}`}><Pencil size={14} />{r ? 'Edit' : 'Add'}</button>}
+              <td className="row-actions">{!demo && profile.role !== 'cluster' && w.status !== 'upcoming' && <button className="icon-text" onClick={() => jump('enter', { campusId: id, weekEnding: w.weekEnding })} aria-label={`${r ? 'Edit' : 'Add'} week ending ${formatDate(w.weekEnding)}`}><Pencil size={14} />{r ? 'Edit' : 'Add'}</button>}
                 {!demo && r && profile.role === 'admin' && <button className="icon-text danger" disabled={busy === r.id} onClick={() => remove(r)} aria-label={`Delete week ending ${formatDate(w.weekEnding)}`}><Trash2 size={14} /></button>}</td>
             </tr>;
           })}</tbody></table></div>

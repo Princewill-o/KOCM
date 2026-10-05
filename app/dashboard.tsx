@@ -1,6 +1,6 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
-import { LogOut, LayoutDashboard, Building2, ClipboardPen, UsersRound, UserRound } from 'lucide-react';
+import { LogOut, LayoutDashboard, Building2, ClipboardPen, UsersRound, UserRound, GraduationCap, BookOpen, Bell, MapPin, ChartNoAxesCombined, ContactRound } from 'lucide-react';
 import { ThemeToggle } from './theme';
 import { supabase } from '@/lib/supabase';
 import { currentProfile, currentSeason, listCampuses, signOut, canSeeAllCampuses, ROLE_LABELS, friendly, type Profile, type Campus } from '@/lib/koc';
@@ -11,21 +11,31 @@ import ReportForm from './views/report-form';
 import Accounts from './views/accounts';
 import ProfileView from './views/profile';
 import './management.css';
+import './features.css';
 
-export type Tab = 'overview' | 'campus' | 'enter' | 'accounts' | 'profile';
+export type { Tab } from '@/lib/access';
+import { tabsFor, statsCampuses, type Tab } from '@/lib/access';
+import { listTrendReports, unreadNotificationCount } from '@/lib/platform';
+import type { Report } from '@/lib/koc';
+import Grades from './views/grades';
+import Contacts from './views/contacts';
+import Materials from './views/materials';
+import Notifications from './views/notifications';
+import CampusMap from './views/campus-map';
+import QuarterlyTrends from './views/quarterly-trends';
 export type Jump = (tab: Tab, opts?: { campusId?: string; weekEnding?: string }) => void;
-const navIcons = { overview: LayoutDashboard, campus: Building2, enter: ClipboardPen, accounts: UsersRound, profile: UserRound };
+const navIcons = { overview: LayoutDashboard, campus: Building2, enter: ClipboardPen, accounts: UsersRound, profile: UserRound, grades: GraduationCap, contacts: ContactRound, materials: BookOpen, notifications: Bell, map: MapPin, quarters: ChartNoAxesCombined };
 
-function tabsFor(p: Profile): { id: Tab; label: string }[] {
-  if (p.status !== 'active') return [{ id: 'profile', label: 'My profile' }];
-  if (p.role === 'campus') return [
-    { id: 'campus', label: 'My campus' }, { id: 'enter', label: 'Weekly report' }, { id: 'profile', label: 'My profile' },
-  ];
-  return [
-    { id: 'overview', label: 'Overview' }, { id: 'campus', label: 'Campuses' }, { id: 'enter', label: 'Enter stats' },
-    ...(p.role === 'admin' ? [{ id: 'accounts' as Tab, label: 'Accounts' }] : []),
-    { id: 'profile', label: 'My profile' },
-  ];
+function QuarterView({campuses}: {campuses: Campus[]}) {
+  const [reports,setReports] = useState<Report[]>([]);
+  const [loading,setLoading] = useState(true);
+  const [error,setError] = useState('');
+  useEffect(() => {
+    let alive = true;
+    listTrendReports().then(r => { if(alive) setReports(r); }).catch(e => {if(alive) setError(friendly(e));}).finally(()=>{if(alive) setLoading(false);});
+    return () => {alive=false;};
+  }, []);
+  return <QuarterlyTrends campuses={campuses} reports={reports} loading={loading} error={error} />;
 }
 
 export default function Dashboard() {
@@ -37,6 +47,7 @@ export default function Dashboard() {
   const [weekEnding, setWeekEnding] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [unread, setUnread] = useState(0);
 
   const load = useCallback(async () => {
     try {
@@ -49,7 +60,8 @@ export default function Dashboard() {
       if (p.status === 'active') {
         const [s, c] = await Promise.all([currentSeason(), listCampuses()]);
         setSeason(s); setCampuses(c);
-        setCampusId((prev) => prev || (p.role === 'campus' ? p.campus_id ?? '' : c[0]?.id ?? ''));
+        const visible = statsCampuses(p, c);
+        setCampusId(prev => visible.some(c => c.id === prev) ? prev : visible[0]?.id ?? '');
       }
     } catch (e) {
       setError(friendly(e));
@@ -66,8 +78,18 @@ export default function Dashboard() {
     return () => data.subscription.unsubscribe();
   }, [load]);
 
+  useEffect(() => {
+    if (profile?.status !== 'active') return;
+    let alive = true;
+    const refreshCount = () => unreadNotificationCount().then(count => {if(alive) setUnread(count);}).catch(() => {});
+    void refreshCount();
+    const timer = window.setInterval(refreshCount, 30000);
+    return () => {alive=false; window.clearInterval(timer);};
+  }, [profile?.id, profile?.status, tab]);
+
   const jump: Jump = (next, opts) => {
-    if (opts?.campusId) setCampusId(opts.campusId);
+    if (!profile || !tabsFor(profile).some(t => t.id === next)) return;
+    if (opts?.campusId && statsCampuses(profile, campuses).some(c => c.id === opts.campusId)) setCampusId(opts.campusId);
     setWeekEnding(opts?.weekEnding ?? '');
     setTab(next);
     history.replaceState(null, '', `#${next}`);
@@ -82,11 +104,12 @@ export default function Dashboard() {
 
   const tabs = profile ? tabsFor(profile) : [];
   const allAccess = canSeeAllCampuses(profile);
+  const visibleCampuses = profile ? statsCampuses(profile, campuses) : [];
 
   return <div className="app-shell">
     <header className="site-header">
       <a className="brand" href="/dashboard"><span className="logo-box"><img src="/kharis-logo.png" alt="Kharis dove" /></span><span>KHARIS<span className="brand-small">ON CAMPUS</span></span></a>
-      <nav aria-label="Main navigation">{tabs.map((t) => { const Icon = navIcons[t.id]; return <button key={t.id} aria-current={tab === t.id ? 'page' : undefined} className={tab === t.id ? 'nav-active' : ''} onClick={() => jump(t.id)}><Icon className="nav-icon" size={20} aria-hidden="true" /><span>{t.label}</span></button>; })}</nav>
+      <nav aria-label="Main navigation">{tabs.map((t) => { const Icon = navIcons[t.id]; return <button key={t.id} aria-current={tab === t.id ? 'page' : undefined} className={tab === t.id ? 'nav-active' : ''} onClick={() => jump(t.id)}><Icon className="nav-icon" size={20} aria-hidden="true" /><span>{t.label}{t.id === 'notifications' && unread > 0 && <span className="notification-count"> {unread}</span>}</span></button>; })}</nav>
       <div className="header-actions">
         <ThemeToggle />
         {profile && <button className="user-chip" onClick={() => jump('profile')} title="My profile"><span className="user-name">{profile.full_name}</span><span className="role-badge">{ROLE_LABELS[profile.role]}</span></button>}
@@ -113,10 +136,18 @@ export default function Dashboard() {
         </>
         : !season ? <p role="status">Loading season…</p>
         : <>
+          {unread > 0 && tab !== 'notifications' && <div className="notification-reminder" role="status"><Bell size={18} /><span>{unread} unread alert{unread === 1 ? '' : 's'} require review.</span><button className="text-button" onClick={() => jump('notifications')}>Review notifications</button></div>}
           {tab === 'overview' && allAccess && <Overview season={season} profile={profile} jump={jump} />}
-          {tab === 'campus' && <CampusView key={campusId} season={season} profile={profile} campuses={campuses} campusId={campusId} setCampusId={setCampusId} jump={jump} />}
-          {tab === 'enter' && <ReportForm season={season} profile={profile} campuses={campuses} campusId={campusId} setCampusId={setCampusId} initialWeek={weekEnding} />}
+          {tab === 'campus' && !visibleCampuses.length && <section className="panel padded"><h1>No campuses assigned yet</h1><p>An administrator must assign your campus or cluster before its statistics appear.</p></section>}
+          {tab === 'campus' && !!visibleCampuses.length && <CampusView key={campusId} season={season} profile={profile} campuses={visibleCampuses} campusId={campusId} setCampusId={setCampusId} jump={jump} />}
+          {tab === 'enter' && profile.role !== 'cluster' && <ReportForm season={season} profile={profile} campuses={visibleCampuses} campusId={campusId} setCampusId={setCampusId} initialWeek={weekEnding} />}
           {tab === 'accounts' && profile.role === 'admin' && <Accounts profile={profile} campuses={campuses} />}
+          {tab === 'grades' && <Grades profile={profile} campuses={visibleCampuses} />}
+          {tab === 'contacts' && <Contacts profile={profile} campuses={visibleCampuses} />}
+          {tab === 'materials' && <Materials profile={profile} campuses={visibleCampuses} />}
+          {tab === 'notifications' && <Notifications />}
+          {tab === 'map' && <CampusMap profile={profile} campuses={campuses} onCampus={id => jump('campus', {campusId:id})} />}
+          {tab === 'quarters' && profile.role !== 'campus' && <QuarterView campuses={visibleCampuses} />}
           {tab === 'profile' && <ProfileView profile={profile} onChange={load} />}
         </>}
       <footer className="page-footer"><span>© Kharis On Campus</span></footer>

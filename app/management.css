@@ -85,3 +85,8 @@
   .app-shell .panel-heading{flex-wrap:wrap}.app-shell .breadcrumb{flex-wrap:wrap;line-height:1.6}.app-shell .panel{border-radius:8px}
   .app-shell .management-table-wrap{overscroll-behavior-x:contain}.app-shell .management-table-wrap th{position:sticky;top:0;background:var(--card);z-index:1}
 }
+
+/* Wrap expanded navigation while keeping the account controls visible. */
+.site-header{flex-wrap:wrap;gap:16px}.site-header nav{order:3;flex-basis:100%;flex-wrap:wrap;justify-content:flex-start;gap:6px}.site-header .header-actions{margin-left:auto}.site-header nav button{padding:9px 12px;font-size:12px}.site-header nav .nav-icon{width:17px;height:17px}
+
+.notification-count{border-radius:20px;background:#efcf00;color:#161719;padding:1px 6px;margin-left:4px}.notification-reminder{display:flex;gap:12px;align-items:center;flex-wrap:wrap;border:1px solid var(--border);border-left:4px solid #efcf00;border-radius:8px;padding:16px;margin:18px 0}.account-scope-controls{display:flex;gap:8px;flex-direction:column}

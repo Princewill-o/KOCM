@@ -2,7 +2,7 @@
 import { supabase } from './supabase';
 import type { Season } from './reporting';
 
-export type Role = 'admin' | 'editor' | 'campus';
+export type Role = 'admin' | 'editor' | 'campus' | 'cluster';
 export type Status = 'pending' | 'active' | 'rejected';
 export type Profile = {
   id: string;
@@ -11,10 +11,11 @@ export type Profile = {
   role: Role;
   status: Status;
   campus_id: string | null;
+  cluster_id?: string | null;
   created_at: string;
   campus?: { name: string } | null;
 };
-export type Campus = { id: string; name: string; region: string };
+export type Campus = { id: string; name: string; region: string; cluster_id?: string | null; latitude?: number | null; longitude?: number | null; address?: string | null; meeting_info?: string | null; contact_email?: string | null };
 export type Report = {
   id: string;
   campus_id: string;
@@ -59,7 +60,7 @@ export type ReportInput = {
   campusId?: string | null;
 };
 
-export const ROLE_LABELS: Record<Role, string> = { admin: 'Administrator', editor: 'Stats editor', campus: 'Campus rep' };
+export const ROLE_LABELS: Record<Role, string> = { admin: 'Administrator', editor: 'Stats editor', campus: 'Campus rep', cluster: 'Cluster lead' };
 export const canSeeAllCampuses = (p: Profile | null) => !!p && p.status === 'active' && (p.role === 'admin' || p.role === 'editor');
 
 /** Turn Supabase/Postgres errors into short, human messages. */
@@ -157,7 +158,7 @@ export async function currentSeason(): Promise<Season> {
 }
 
 export async function listCampuses(): Promise<Campus[]> {
-  return check(await supabase().from('campuses').select('id, name, region').eq('is_active', true).order('name')) as Campus[];
+  return check(await supabase().from('campuses').select('*').eq('is_active', true).order('name')) as Campus[];
 }
 
 export async function listReports(campusId: string, seasonId: string): Promise<Report[]> {
@@ -207,7 +208,7 @@ export async function listProfiles(): Promise<Profile[]> {
   return check(await supabase().from('profiles').select('*, campus:campuses(name)').order('created_at')) as Profile[];
 }
 
-export async function adminUpdateUser(id: string, changes: { role?: Role; status?: Status; campusId?: string | null; fullName?: string }) {
+export async function adminUpdateUser(id: string, changes: { role?: Role; status?: Status; campusId?: string | null; clusterId?: string | null; fullName?: string }) {
   return check(
     await supabase().rpc('admin_update_user', {
       p_user_id: id,
@@ -215,6 +216,7 @@ export async function adminUpdateUser(id: string, changes: { role?: Role; status
       p_status: changes.status ?? null,
       p_campus_id: changes.campusId ?? null,
       p_full_name: changes.fullName ?? null,
+      p_cluster_id: changes.clusterId ?? null,
     }),
   ) as Profile;
 }

@@ -46,3 +46,6 @@ next-env.d.ts
 /work/
 /.local/
 *.tsbuildinfo
+
+# Supabase CLI machine-local project state
+/supabase/.temp/

@@ -17,7 +17,8 @@ Weekly campus reporting for Kharis On Campus (KOC): attendance, prayer time, eva
 |---|---|---|
 | **Administrator** | Minister Bene, Pastor Awo | See every campus, enter/edit any week, delete reports, approve campus reps, change anyone's role/status/email |
 | **Stats editor** | Taija Lee, Ashley | See every campus, enter/edit weekly stats for any campus |
-| **Campus rep** | added later via Sign up | See and report for their own university only, after an admin approves them |
+| **Campus rep** | university representatives | Own campus reports, grades, people and materials, after approval |
+| **Cluster lead** | Modupe, Elyon, Lindsay, Naa, Zipporah, Chiedza | Read assigned cluster statistics, grades and people; review alerts |
 
 Everyone can update their own name and password under **My profile**. Administrators can change their own email directly; others confirm a new email from their inbox (or ask an admin to set it on the **Accounts** page).
 
@@ -34,7 +35,8 @@ Everyone can update their own name and password under **My profile**. Administra
 ```bash
 npm install
 npm run dev        # http://localhost:5173
-npm test           # reporting-calendar tests
+npm test           # reporting, access, grades, contacts and trend tests
+npm run test:database # disposable local PostgreSQL migration / RLS tests
 npm run typecheck
 npm run build
 ```
@@ -50,3 +52,17 @@ The Supabase URL and publishable key are in `lib/supabase.ts` (they are safe to 
 
 - **Campus reps:** they sign up at `/signup`, confirm their email, then an admin approves them under **Accounts**.
 - **Admins / stats editors:** create the user in Supabase (Authentication → Users → Add user, tick *Auto confirm*). They appear under **Accounts → Pending** with no access; an admin approves them and picks their role.
+
+## Campus workflows
+
+- Weekly reports remain due Friday at **10pm Europe/London**, including BST/GMT. A first submission after that deadline creates an in-app alert for every active admin/editor (currently Taija-lee, Ashley, Minister Bene and Pastor Awo). Editing an existing report does not generate duplicate alerts.
+- **Grades:** submit each student's assessment percentage. Scores strictly below 59% notify overall leads and the campus's cluster lead. Recipients use Notifications to mark their alerts as read; unread counts appear in navigation. Notifications are currently in-app, with no email delivery configured.
+- **People:** scoped phone/contact records track fellowship and branch attendance and follow-up notes. Archive instead of deleting. Cluster leads can read their cluster's records; they cannot edit campus submissions.
+- **Quarterly trends:** leadership and cluster accounts compare attendance, prayer, evangelism and outings by calendar quarter across seasons. Unreported data stays unknown.
+- **Materials:** admin/editor accounts upload private PDFs up to 20 MiB, for all campuses or one campus. The canvas reader watermarks each page, hides it when focus is lost, and suppresses printing. Browsers cannot guarantee screenshot, recording or file extraction prevention; this is access-controlled reading, not DRM.
+- **Campus map:** 24 sourced university reference locations are provided, with OpenStreetMap attribution. They are not confirmed KOC meeting venues. Ambiguous locations remain unset; administrators edit coordinates, meetings, contact address and cluster on the map page. Natural Earth supplies the UK boundary.
+- **Landing page:** university interest/account requests and existing member sign-in.
+
+Clusters follow the existing campus region data: London (Modupe), Midlands (Elyon), South (Lindsay), North (Naa), South East (Zipporah), West (Chiedza). Existing `West England` campuses map to West. `Colleges` remains unassigned. Real campus/cluster accounts need verified email addresses: use signup, then an administrator approves and assigns their campus or cluster under Accounts. Named cluster leads are a roster, not fabricated login accounts.
+
+See [database contracts and test instructions](supabase/WORKFLOWS.md). New migrations are in `supabase/migrations`; keep them in sync with the connected project before publishing the frontend.
