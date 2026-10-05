@@ -1,13 +1,13 @@
 'use client';
 import { collectPages } from './pagination';
-import { supabase } from './supabase';
+import { supabase, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './supabase';
 import { friendly, type Report } from './koc';
 
 export type Cluster = { id: string; name: string; lead_name: string; is_active: boolean };
 export type Grade = { id: string; campus_id: string; student_name: string; course: string; assessment: string; percentage: number; assessment_date: string; notes: string; submitted_by: string; created_at: string };
 export type Contact = { id: string; campus_id: string; full_name: string; phone: string; fellowship_attended: boolean; branch_attended: boolean; notes: string; is_active: boolean; created_by: string; created_at: string; updated_at: string };
 export type Notification = { id: string; recipient_id: string; kind: string; title: string; message: string; campus_id: string | null; report_id: string | null; grade_id: string | null; created_at: string; read_at: string | null };
-export type Material = { id: string; title: string; description: string; object_path: string; campus_id: string | null; uploaded_by: string; is_active: boolean; created_at: string; updated_at: string };
+export type Material = { page_count: number; protected_ready: boolean; id: string; title: string; description: string; object_path: string; campus_id: string | null; uploaded_by: string; is_active: boolean; created_at: string; updated_at: string };
 function checked<T>(result: { data: unknown; error: unknown }): T {
   if (result.error) throw new Error(friendly(result.error));
   return result.data as T;
@@ -52,25 +52,29 @@ export async function acknowledgeNotification(id: string) {
 export async function listMaterials(): Promise<Material[]> {
   return collectPages(async (from,to) => checked<Material[]>(await supabase().from('materials').select('*').eq('is_active', true).order('created_at', { ascending: false }).order('id').range(from,to)));
 }
-export async function uploadMaterial(file: File, input: { title: string; description: string; campusId: string | null }): Promise<Material> {
-  if (file.type !== 'application/pdf' || file.size > 20 * 1024 * 1024 || file.size === 0) throw new Error('Choose a PDF between 1 byte and 20 MB.');
-  const { data: auth, error: authError } = await supabase().auth.getUser();
-  if (authError || !auth.user) throw new Error('Please log in before uploading.');
-  const objectPath = `${auth.user.id}/${crypto.randomUUID()}.pdf`;
-  const storage = supabase().storage.from('koc-materials');
-  checked(await storage.upload(objectPath, file, { contentType: 'application/pdf', upsert: false }));
-  try {
-    return checked(await supabase().from('materials').insert({ title: input.title.trim(), description: input.description.trim(), campus_id: input.campusId || null, object_path: objectPath }).select().single());
-  } catch (error) {
-    await storage.remove([objectPath]);
-    throw error;
-  }
+export async function uploadMaterial(file: File, input: { title: string; description: string; campusId: string | null }, onProgress?: (message: string) => void): Promise<Material> {
+  const { publishProtectedMaterial } = await import('./material-publishing');
+  return publishProtectedMaterial(file,input,onProgress);
 }
 export async function archiveMaterial(id: string) {
   checked(await supabase().from('materials').update({ is_active: false }).eq('id', id).select('id').single());
 }
-export async function readMaterial(material: Material): Promise<Blob> {
-  return checked(await supabase().storage.from('koc-materials').download(material.object_path));
+export async function readMaterialPage(materialId: string, page: number, sessionId?: string, signal?: AbortSignal): Promise<{blob: Blob; sessionId: string; pageCount: number}> {
+  const { data, error } = await supabase().auth.getSession();
+  if (error || !data.session) throw new Error('Please log in to read materials.');
+  const response = await fetch(`${SUPABASE_URL}/functions/v1/protected-material-page`, {
+    method:'POST', headers:{'Content-Type':'application/json', 'apikey':SUPABASE_PUBLISHABLE_KEY, 'Authorization':`Bearer ${data.session.access_token}`},
+    body:JSON.stringify({materialId,page,sessionId:sessionId ?? null}), signal, cache:'no-store', credentials:'omit', redirect:'error',
+  });
+  if (!response.ok) {
+    const failure = await response.json().catch(()=>({error:'The protected page could not be opened.'}));
+    throw new Error(failure && typeof failure === 'object' && 'error' in failure && typeof failure.error==='string' ? failure.error : 'The protected page could not be opened.');
+  }
+  const id=response.headers.get('X-Reader-Session'), count=Number(response.headers.get('X-Page-Count'));
+  if (!id || !Number.isInteger(count) || count<1 || count>100 || response.headers.get('Content-Type')?.split(';')[0]!=='image/png') throw new Error('The protected page response was invalid.');
+  const blob=await response.blob();
+  if (blob.size>8*1024*1024 || !blob.size) throw new Error('The protected page response was invalid.');
+  return {blob,sessionId:id,pageCount:count};
 }
 export async function updateCampusDetails(id: string, input: { clusterId: string | null; latitude: number | null; longitude: number | null; address: string; meetingInfo: string; contactEmail: string }) {
   checked(await supabase().from('campuses').update({ cluster_id: input.clusterId, latitude: input.latitude, longitude: input.longitude, address: input.address.trim(), meeting_info: input.meetingInfo.trim(), contact_email: input.contactEmail.trim() }).eq('id', id).select('id').single());

@@ -1,170 +1,14 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
-import type {
-  PDFDocumentProxy,
-  PDFDocumentLoadingTask,
-  RenderTask,
-} from "pdfjs-dist";
+import { useEffect, useState } from "react";
 import { friendly, type Profile, type Campus } from "@/lib/koc";
 import {
   listMaterials,
   uploadMaterial,
   archiveMaterial,
-  readMaterial,
   type Material,
 } from "@/lib/platform";
-function Reader({
-  material,
-  profile,
-  onClose,
-}: {
-  material: Material;
-  profile: Profile;
-  onClose: () => void;
-}) {
-  const canvas = useRef<HTMLCanvasElement>(null),
-    [page, setPage] = useState(1),
-    [pages, setPages] = useState(0),
-    [error, setError] = useState(""),
-    [hidden, setHidden] = useState(false),
-    [rendering, setRendering] = useState(true);
-  const documentCache = useRef<Promise<PDFDocumentProxy> | null>(null);
-  const loadingTask = useRef<PDFDocumentLoadingTask | null>(null);
-  useEffect(
-    () => () => {
-      documentCache.current = null;
-      void loadingTask.current?.destroy();
-      loadingTask.current = null;
-    },
-    [],
-  );
-  useEffect(() => {
-    const hide = () => setHidden(true),
-      show = () => setHidden(document.hidden);
-    window.addEventListener("blur", hide);
-    window.addEventListener("focus", show);
-    document.addEventListener("visibilitychange", show);
-    return () => {
-      window.removeEventListener("blur", hide);
-      window.removeEventListener("focus", show);
-      document.removeEventListener("visibilitychange", show);
-    };
-  }, []);
-  useEffect(() => {
-    let cancelled = false;
-    let renderTask: RenderTask | undefined;
-    async function render() {
-      setRendering(true);
-      setError("");
-      if (canvas.current) {
-        const context = canvas.current.getContext("2d");
-        context?.clearRect(0, 0, canvas.current.width, canvas.current.height);
-      }
-      try {
-        const pdfjs = await import("pdfjs-dist");
-        pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
-        if (!documentCache.current) {
-          documentCache.current = (async () => {
-            const blob = await readMaterial(material);
-            const task = pdfjs.getDocument({
-              data: new Uint8Array(await blob.arrayBuffer()),
-            });
-            loadingTask.current = task;
-            return task.promise;
-          })();
-        }
-        const doc = await documentCache.current;
-        if (cancelled) return;
-        setPages(doc.numPages);
-        const pdfPage = await doc.getPage(page);
-        if (cancelled || !canvas.current) return;
-        const viewport = pdfPage.getViewport({ scale: 1.4 });
-        canvas.current.width = viewport.width;
-        canvas.current.height = viewport.height;
-        const ctx = canvas.current.getContext("2d");
-        if (!ctx) return;
-        renderTask = pdfPage.render({
-          canvas: canvas.current,
-          canvasContext: ctx,
-          viewport,
-        });
-        await renderTask.promise;
-        if (cancelled) return;
-        ctx.save();
-        ctx.globalAlpha = 0.16;
-        ctx.fillStyle = "#634514";
-        ctx.font = "20px sans-serif";
-        for (let y = 70; y < viewport.height; y += 150) {
-          ctx.fillText(
-            `${profile.full_name} · KOC · ${new Date().toLocaleDateString("en-GB")}`,
-            25,
-            y,
-          );
-        }
-        ctx.restore();
-      } catch (e) {
-        if (!cancelled) setError(friendly(e));
-      } finally {
-        if (!cancelled) setRendering(false);
-      }
-    }
-    void render();
-    return () => {
-      cancelled = true;
-      renderTask?.cancel();
-    };
-  }, [material, profile.full_name, page]);
-  return (
-    <section
-      className="panel padded feature-reader"
-      onContextMenu={(e) => e.preventDefault()}
-    >
-      <div className="feature-reader-controls">
-        <h2>{material.title}</h2>
-        <button className="button" onClick={onClose}>
-          Close reader
-        </button>
-      </div>
-      <p className="small muted">
-        Personal reading copy. Content is watermarked and hidden when this
-        window loses focus. Browser software cannot reliably prevent screenshots
-        or screen recordings.
-      </p>
-      {error && (
-        <p role="alert" className="form-error">
-          {error}
-        </p>
-      )}
-      {rendering && <p role="status">Opening material…</p>}
-      <div
-        className="feature-reader-canvas"
-        style={{ visibility: hidden ? "hidden" : "visible" }}
-      >
-        <canvas ref={canvas} aria-label={`Page ${page} of ${material.title}`} />
-      </div>
-      <div className="feature-reader-controls">
-        <button
-          className="button"
-          disabled={page <= 1}
-          onClick={() => setPage((p) => p - 1)}
-        >
-          Previous page
-        </button>
-        <span>
-          Page {page}
-          {pages ? ` of ${pages}` : ""}
-        </span>
-        <button
-          className="button"
-          disabled={!pages || page >= pages}
-          onClick={() => setPage((p) => p + 1)}
-        >
-          Next page
-        </button>
-      </div>
-    </section>
-  );
-}
+import Reader from "../components/material-reader";
+import { prepareProtectedMaterial } from "@/lib/material-publishing";
 export default function Materials({
   profile,
   campuses,
@@ -176,6 +20,7 @@ export default function Materials({
   const [rows, setRows] = useState<Material[]>([]),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
+    [progress, setProgress] = useState(""),
     [selected, setSelected] = useState<Material | null>(null);
   const canUpload = profile.role === "admin" || profile.role === "editor";
   const refresh = () =>
@@ -199,14 +44,24 @@ export default function Materials({
         title: String(data.get("title")),
         description: String(data.get("description")),
         campusId: String(data.get("campus")) || null,
-      });
+      }, setProgress);
       await refresh();
       form.reset();
     } catch (e) {
       setError(friendly(e));
     } finally {
       setBusy(false);
+      setProgress("");
     }
+  }
+  async function prepare(material: Material) {
+    setBusy(true);
+    setError("");
+    try {
+      await prepareProtectedMaterial(material, setProgress);
+      await refresh();
+    } catch (cause) { setError(friendly(cause)); }
+    finally { setBusy(false); setProgress(""); }
   }
   async function archive(id: string) {
     setBusy(true);
@@ -218,6 +73,7 @@ export default function Materials({
       setError(friendly(e));
     } finally {
       setBusy(false);
+      setProgress("");
     }
   }
   return (
@@ -265,7 +121,7 @@ export default function Materials({
                 accept="application/pdf,.pdf"
                 required
               />
-              <small>PDF format, maximum 20 MB.</small>
+              <small>PDF format, maximum 20 MB and 100 pages. Protected reading copies are prepared before sharing.</small>
             </label>
             <button className="button button-yellow" disabled={busy}>
               {busy ? "Uploading…" : "Upload material"}
@@ -273,6 +129,7 @@ export default function Materials({
           </form>
         </section>
       )}
+      {busy && progress && <p role="status">{progress}</p>}
       <section className="panel padded feature-section">
         <h2>Available materials</h2>
         {loading && <p role="status">Loading…</p>}
@@ -291,12 +148,12 @@ export default function Materials({
               </span>
             </div>
             <div>
-              <button
+              {m.protected_ready ? <button
                 className="button button-yellow"
                 onClick={() => setSelected(m)}
               >
                 Read material
-              </button>
+              </button> : canUpload ? <button className="button button-yellow" disabled={busy} onClick={() => prepare(m)}>Prepare protected copy</button> : <span className="small muted">Protected copy being prepared</span>}
               {canUpload && (
                 <button
                   className="button"

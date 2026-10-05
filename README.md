@@ -8,7 +8,7 @@ Weekly campus reporting for Kharis On Campus (KOC): attendance, prayer time, eva
 - **Backend:** Supabase project **Kharis** (`yrqkafiqwllkphroztqk`, London region).
   - **Supabase Auth** handles login, sign-up, sessions (secure cookies), password reset and email changes.
   - **Postgres + row level security** decide what each person can see. The browser never gets more data than its role allows.
-  - All writes go through checked database functions (`submit_report`, `admin_update_user`, …) — nobody can write to the tables directly.
+  - Checked database functions (`submit_report`, `admin_update_user`, …), column grants and row level security validate writes and isolate campus data.
 - Schema, security rules and functions: `supabase/migrations/`.
 
 ## Roles
@@ -59,7 +59,7 @@ The Supabase URL and publishable key are in `lib/supabase.ts` (they are safe to 
 - **Grades:** submit each student's assessment percentage. Scores strictly below 59% notify overall leads and the campus's cluster lead. Recipients use Notifications to mark their alerts as read; unread counts appear in navigation. Notifications are currently in-app, with no email delivery configured.
 - **People:** scoped phone/contact records track fellowship and branch attendance and follow-up notes. Archive instead of deleting. Cluster leads can read their cluster's records; they cannot edit campus submissions.
 - **Quarterly trends:** leadership and cluster accounts compare attendance, prayer, evangelism and outings by calendar quarter across seasons. Unreported data stays unknown.
-- **Materials:** admin/editor accounts upload private PDFs up to 20 MiB, for all campuses or one campus. The canvas reader watermarks each page, hides it when focus is lost, and suppresses printing. Browsers cannot guarantee screenshot, recording or file extraction prevention; this is access-controlled reading, not DRM.
+- **Materials:** admin/editor accounts upload private PDFs up to 20 MiB and 100 pages, for all campuses or one campus. Publishers prepare bounded PNG reading pages before publication. Campus/cluster accounts cannot access either original PDFs or clean page files. The `protected-material-page` Supabase Edge Function checks authorisation for every page, permanently stamps the reader identity/session/time into the image, and delivers only that page with no-store headers. Sessions expire after 15 minutes; page/session limits and private audit records deter bulk extraction. The canvas reader clears on focus loss, print/capture shortcuts and inactivity, with explicit resume. Operating-system screenshots, recording and photographing a screen cannot be reliably blocked. See [protected material deployment and contracts](supabase/PROTECTED_MATERIALS.md).
 - **Campus map:** 24 sourced university reference locations are provided, with OpenStreetMap attribution. They are not confirmed KOC meeting venues. Ambiguous locations remain unset; administrators edit coordinates, meetings, contact address and cluster on the map page. Natural Earth supplies the UK boundary.
 - **Landing page:** university interest/account requests and existing member sign-in.
 
