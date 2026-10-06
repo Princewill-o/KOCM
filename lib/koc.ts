@@ -72,6 +72,8 @@ export function friendly(error: unknown): string {
   if (/invalid login credentials/i.test(message)) return 'Email or password is incorrect.';
   if (/email not confirmed/i.test(message)) return 'Please confirm your email address first — check your inbox for the link.';
   if (/user already registered/i.test(message)) return 'An account with this email already exists. Try logging in.';
+  const retryAfter = /request this after (\d+) seconds/i.exec(message);
+  if (retryAfter) return `Wait ${retryAfter[1]} seconds before requesting another reset link.`;
   if (/rate limit|too many/i.test(message)) return 'Too many attempts. Please wait a few minutes and try again.';
   if (/password should be|weak password/i.test(message)) return 'Choose a stronger password (at least 12 characters, mixing letters and numbers).';
   if (/new password should be different/i.test(message)) return 'Your new password must be different from the current one.';

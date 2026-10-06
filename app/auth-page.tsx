@@ -17,6 +17,7 @@ import {
   type Campus,
 } from "@/lib/koc";
 import { supabase } from "@/lib/supabase";
+import { watchPasswordRecovery } from "@/lib/password-recovery";
 import "./management.css";
 import "./auth-design.css";
 
@@ -108,30 +109,10 @@ export default function AuthPage({ mode = "login" }: { mode?: Mode }) {
           ),
         );
     if (mode === "update") {
-      // The reset link signs the user in with a short-lived recovery session.
-      const { data: sub } = supabase().auth.onAuthStateChange(
-        (event, session) => {
-          if (
-            session &&
-            (event === "PASSWORD_RECOVERY" ||
-              event === "SIGNED_IN" ||
-              event === "INITIAL_SESSION")
-          )
-            setReady(true);
-        },
+      return watchPasswordRecovery(
+        supabase().auth, window.location.search, window.location.hash,
+        state => { setReady(state.ready); setError(state.error); },
       );
-      const timer = setTimeout(async () => {
-        const { data } = await supabase().auth.getSession();
-        if (data.session) setReady(true);
-        else
-          setError(
-            "This reset link is invalid or has expired. Request a new one.",
-          );
-      }, 1500);
-      return () => {
-        sub.subscription.unsubscribe();
-        clearTimeout(timer);
-      };
     }
   }, [mode]);
 
@@ -157,7 +138,7 @@ export default function AuthPage({ mode = "login" }: { mode?: Mode }) {
       } else if (mode === "forgot") {
         await requestPasswordReset(values.email!);
         setNotice(
-          "If an account exists for that email, a reset link is on its way. Check your inbox and spam folder.",
+          "If an account exists for that email, a reset link is on its way. Check your inbox and spam folder. Open the newest link in the same browser you used here.",
         );
       } else {
         await setNewPassword(values.password!);
@@ -327,6 +308,9 @@ export default function AuthPage({ mode = "login" }: { mode?: Mode }) {
                 <p role="alert" className="form-error">
                   {error}
                 </p>
+              )}
+              {mode === "update" && error && !ready && (
+                <Link href="/forgot-password" className="text-button">Request a new reset link</Link>
               )}
               <button
                 className="button button-yellow auth-submit"
