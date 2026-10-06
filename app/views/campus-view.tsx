@@ -52,7 +52,7 @@ export default function CampusView({ season, profile, campuses, campusId, setCam
 
   return <>
     <div className="page-heading">
-      <div><div className="eyebrow">YOUR CAMPUS. YOUR STORY.</div><h1>{campus?.name ?? profile.campus?.name ?? 'Campus'}</h1><p>{campus?.region ? `${campus.region} · ` : ''}Small steps. Shared faith. A growing community.</p></div>
+      <div><div className="eyebrow">CAMPUS REPORTING</div><h1>{campus?.name ?? profile.campus?.name ?? 'Campus'}</h1><p>{campus?.region ? `${campus.region} · ` : ''}Weekly reports and fellowship activity.</p></div>
       {!isRep && <label className="campus-picker">View campus<select value={id} onChange={(e) => setCampusId(e.target.value)}>{campuses.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>}
     </div>
     {error && <div className="management-alert" role="alert">{error}</div>}
@@ -65,7 +65,7 @@ export default function CampusView({ season, profile, campuses, campusId, setCam
           { label: 'Evangelism time', value: hours(totals.evangelism), Icon: Megaphone }, { label: 'Outreach outings', value: totals.outings, Icon: Footprints }].map(({ label, value, Icon }, i) =>
           <div className={`stat-card ${i === 0 ? 'featured' : ''}`} key={label}><div className="stat-top"><span>{label}</span><Icon size={20} /></div><div className="stat-value">{reports.length ? value : '—'}</div><small>{reports.length ? 'Across submitted weeks' : 'No reports yet'}</small></div>)}
       </section>
-      <section className="panel padded completion-panel"><div className="panel-heading"><div><h2>Report completion</h2><p>Opened weeks only. Future reports are excluded.</p></div><button className="button" disabled={exporting} onClick={exportExcel}><Download size={17} />{exporting ? 'Preparing Excel…' : 'Download Excel'}</button></div><div className="completion-cards"><div><span>Expected</span><strong>{completed + overdue + pending}</strong></div><div><span>Completed</span><strong>{completed}</strong></div><div><span>Not yet done</span><strong>{overdue + pending}</strong></div><div><span>Overdue</span><strong>{overdue}</strong></div></div><p className="completion-caption">{pending} reports still within the Friday deadline.</p></section>
+      <section className="panel padded completion-panel"><div className="panel-heading"><div><h2>Report completion</h2><p>Opened weeks only. Future reports are excluded.</p></div><button className="button" disabled={exporting} onClick={exportExcel}><Download size={17} />{exporting ? 'Preparing Excel…' : 'Download Excel'}</button></div><div className="completion-cards"><div><span>Expected</span><strong>{completed + overdue + pending}</strong></div><div><span>Completed</span><strong>{completed}</strong></div><div><span>Outstanding</span><strong>{overdue + pending}</strong></div><div><span>Overdue</span><strong>{overdue}</strong></div></div><p className="completion-caption">{pending} reports still within the Friday deadline.</p></section>
       <Trends reports={reports} />
       <section className="panel padded reporting-history"><h2>Weekly record</h2><p>Attendance counts visits, not unique people. Minutes are entered as total activity duration.</p>
         <div className="management-table-wrap"><table><thead><tr><th>Week ending</th><th>Status</th><th>Attendance</th><th>Prayer</th><th>Evangelism</th><th>Outings</th><th>Notes</th><th /></tr></thead>
@@ -92,12 +92,12 @@ function Trends({ reports }: { reports: Report[] }) {
   const nextOf = (r: Report) => { const d = new Date(`${r.week_ending}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + 7); return sorted.find((x) => x.week_ending === d.toISOString().slice(0, 10)); };
   const pairs = sorted.filter((r) => nextOf(r)).length;
   return <div className="management-charts">
-    <section className="panel padded"><div className="panel-heading"><div><h2>Growth in perspective</h2><p>Only this campus’s submitted reports appear here.</p></div></div>
+    <section className="panel padded"><div className="panel-heading"><div><h2>Campus activity</h2><p>Only this campus’s submitted reports appear here.</p></div></div>
       <div className="management-tabs" role="group" aria-label="Chart statistic">{(Object.keys(labels) as (keyof typeof labels)[]).map((m) => <button aria-pressed={metric === m} className={metric === m ? 'active' : ''} key={m} onClick={() => setMetric(m)}>{labels[m]}</button>)}</div>
-      {!sorted.length ? <div className="empty-state"><Users size={30} /><h3>The story starts with the first report.</h3><p>Submit weekly statistics to see progress through May.</p></div>
+      {!sorted.length ? <div className="empty-state"><Users size={30} /><h3>No weekly reports yet.</h3><p>Submit weekly statistics to see progress through May.</p></div>
         : <div className="live-chart" role="img" aria-label={`${labels[metric]} by submitted week`}>{sorted.map((r) => <div className="live-column" key={r.id}><strong>{r[metric]}</strong><div className="live-bar" style={{ height: Math.max(2, (r[metric] / max) * 170) }} /><span>{shortDate(r.week_ending)}</span></div>)}</div>}
       <p className="chart-explainer">Missing weeks are not treated as zero.</p></section>
-    <section className="panel padded"><span className="eyebrow">STEPPING OUT & SHOWING UP</span><h2>Outreach and attendance</h2><p>Compare each week’s outings with attendance that week and the following week.</p>
+    <section className="panel padded"><span className="eyebrow">OUTREACH</span><h2>Outreach and attendance</h2><p>Compare each week’s outings with attendance that week and the following week.</p>
       {pairs < 3 ? <div className="empty-state"><Footprints size={30} /><h3>Building the picture.</h3><p>At least three consecutive week comparisons are needed before interpreting a pattern. {pairs} available so far.</p></div>
         : <p className="insight-note">{pairs} consecutive week comparisons. Look for whether higher outreach activity is followed by higher attendance.</p>}
       {!!sorted.length && <div className="management-table-wrap"><table><thead><tr><th>Week</th><th>Outings</th><th>Attendance</th><th>Next week</th></tr></thead><tbody>{sorted.map((r) => <tr key={r.id}><td>{shortDate(r.week_ending)}</td><td>{r.outreach_outings}</td><td>{r.attendance}</td><td>{nextOf(r)?.attendance ?? '—'}</td></tr>)}</tbody></table></div>}

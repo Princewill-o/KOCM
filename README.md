@@ -66,3 +66,7 @@ The Supabase URL and publishable key are in `lib/supabase.ts` (they are safe to 
 Clusters follow the existing campus region data: London (Modupe), Midlands (Elyon), South (Lindsay), North (Naa), South East (Zipporah), West (Chiedza). Existing `West England` campuses map to West. `Colleges` remains unassigned. Real campus/cluster accounts need verified email addresses: use signup, then an administrator approves and assigns their campus or cluster under Accounts. Named cluster leads are a roster, not fabricated login accounts.
 
 See [database contracts and test instructions](supabase/WORKFLOWS.md). New migrations are in `supabase/migrations`; keep them in sync with the connected project before publishing the frontend.
+
+## Interface design
+
+See [DESIGN.md](DESIGN.md) for the interface foundations and editable Figma reference. Public, authentication and reporting screens share the warm white, charcoal and gold palette; preview/sample records are never published as live campus statistics.
