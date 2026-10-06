@@ -52,6 +52,9 @@ export default defineConfig(async () => {
 
   return {
     server: {
+      // Vite 8 console forwarding can recursively reject before HMR connects.
+      // Keep diagnostics in the browser without forwarding them over the socket.
+      forwardConsole: false,
       ...(managedLinux ? { host: "0.0.0.0", allowedHosts: ["terminal.local"] } : {}),
       ...(isCodexSeatbeltSandbox ? { watch: { useFsEvents: false, usePolling: true } } : {}),
     },
