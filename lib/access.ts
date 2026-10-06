@@ -1,5 +1,5 @@
 import type { Profile, Campus } from './koc';
-export type Tab = 'overview' | 'campus' | 'enter' | 'accounts' | 'profile' | 'grades' | 'contacts' | 'materials' | 'notifications' | 'map' | 'quarters';
+export type Tab = 'overview' | 'campus' | 'enter' | 'accounts' | 'profile' | 'grades' | 'contacts' | 'materials' | 'notifications' | 'quarters';
 export function statsCampuses(profile: Profile, campuses: Campus[]) {
   if (profile.status !== 'active') return [];
   if (profile.role === 'campus') return campuses.filter(c => c.id === profile.campus_id);
@@ -14,7 +14,7 @@ export function tabsFor(p: Profile): { id: Tab; label: string }[] {
     {id:'enter',label:'Weekly report'},
     ...(p.role !== 'campus' ? [{id:'quarters' as Tab,label:'Quarterly trends'}] : []),
     {id:'grades',label:'Grades'}, {id:'contacts',label:'People'}, {id:'materials',label:'Materials'},
-    {id:'notifications',label:'Notifications'}, {id:'map',label:'Campus map'},
+    {id:'notifications',label:'Notifications'},
     ...(p.role === 'admin' ? [{id:'accounts' as Tab,label:'Accounts'}] : []),
     {id:'profile',label:'My profile'},
   ];

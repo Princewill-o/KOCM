@@ -1,6 +1,6 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
-import { LogOut, LayoutDashboard, Building2, ClipboardPen, UsersRound, UserRound, GraduationCap, BookOpen, Bell, MapPin, ChartNoAxesCombined, ContactRound } from 'lucide-react';
+import { LogOut, LayoutDashboard, Building2, ClipboardPen, UsersRound, UserRound, GraduationCap, BookOpen, Bell, ChartNoAxesCombined, ContactRound } from 'lucide-react';
 import FloatingNav from './components/floating-nav';
 import { ThemeToggle } from './theme';
 import { supabase } from '@/lib/supabase';
@@ -22,10 +22,9 @@ import Grades from './views/grades';
 import Contacts from './views/contacts';
 import Materials from './views/materials';
 import Notifications from './views/notifications';
-import CampusMap from './views/campus-map';
 import QuarterlyTrends from './views/quarterly-trends';
 export type Jump = (tab: Tab, opts?: { campusId?: string; weekEnding?: string }) => void;
-const navIcons = { overview: LayoutDashboard, campus: Building2, enter: ClipboardPen, accounts: UsersRound, profile: UserRound, grades: GraduationCap, contacts: ContactRound, materials: BookOpen, notifications: Bell, map: MapPin, quarters: ChartNoAxesCombined };
+const navIcons = { overview: LayoutDashboard, campus: Building2, enter: ClipboardPen, accounts: UsersRound, profile: UserRound, grades: GraduationCap, contacts: ContactRound, materials: BookOpen, notifications: Bell, quarters: ChartNoAxesCombined };
 
 function QuarterView({campuses}: {campuses: Campus[]}) {
   const [reports,setReports] = useState<Report[]>([]);
@@ -57,7 +56,9 @@ export default function Dashboard() {
       setProfile(p);
       const tabs = tabsFor(p);
       const fromHash = window.location.hash.slice(1) as Tab;
-      setTab(tabs.some((t) => t.id === fromHash) ? fromHash : tabs[0].id);
+      const initialTab = tabs.some((t) => t.id === fromHash) ? fromHash : tabs[0].id;
+      setTab(initialTab);
+      if (window.location.hash === '#map') history.replaceState(null, '', `#${initialTab}`);
       if (p.status === 'active') {
         const [s, c] = await Promise.all([currentSeason(), listCampuses()]);
         setSeason(s); setCampuses(c);
@@ -148,7 +149,6 @@ export default function Dashboard() {
           {tab === 'contacts' && <Contacts profile={profile} campuses={visibleCampuses} />}
           {tab === 'materials' && <Materials profile={profile} campuses={visibleCampuses} />}
           {tab === 'notifications' && <Notifications />}
-          {tab === 'map' && <CampusMap profile={profile} campuses={campuses} onCampus={id => jump('campus', {campusId:id})} />}
           {tab === 'quarters' && profile.role !== 'campus' && <QuarterView campuses={visibleCampuses} />}
           {tab === 'profile' && <ProfileView profile={profile} onChange={load} />}
         </>}

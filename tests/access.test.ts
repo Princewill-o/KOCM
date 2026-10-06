@@ -4,6 +4,13 @@ import type { Profile, Campus } from '../lib/koc';
 const profile = (role: Profile['role'], status: Profile['status'] = 'active'): Profile => ({ id:'u',full_name:'User',email:'user@example.test',role,status,campus_id:'own',cluster_id:'north',created_at:'' });
 const campuses: Campus[] = [{id:'own',name:'Own',region:'North',cluster_id:'north'},{id:'other',name:'Other',region:'London',cluster_id:'london'}];
 describe('workspace permissions', () => {
+  it('never exposes the paused campus map for any role or account status', () => {
+    for (const role of ['admin', 'editor', 'cluster', 'campus'] as const) {
+      for (const status of ['active', 'pending', 'rejected'] as const) {
+        expect(tabsFor(profile(role, status)).map(tab => tab.id)).not.toContain('map');
+      }
+    }
+  });
   it('campus users only get their own statistics and weekly form', () => {
     expect(statsCampuses(profile('campus'), campuses).map(c=>c.id)).toEqual(['own']);
     expect(tabsFor(profile('campus')).map(t=>t.id)).toContain('enter');
