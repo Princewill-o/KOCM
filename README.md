@@ -15,10 +15,10 @@ Weekly campus reporting for Kharis On Campus (KOC): attendance, prayer time, eva
 
 | Role | Who | Can do |
 |---|---|---|
-| **Administrator** | Minister Bene, Pastor Awo | See every campus, enter/edit any week, delete reports, approve campus reps, change anyone's role/status/email |
+| **Administrator** | Minister Bene, Pastor Awo, Princewill (after email confirmation) | See every campus, enter/edit any week, delete reports, approve campus reps, change anyone's role/status/email |
 | **Stats editor** | Taija Lee, Ashley | See every campus, enter/edit weekly stats for any campus |
 | **Campus rep** | university representatives | Own campus reports, grades, people and materials, after approval |
-| **Cluster lead** | Modupe, Elyon, Lindsay, Naa, Zipporah, Chiedza | Read assigned cluster statistics, grades and people; review alerts |
+| **Cluster lead** | Modupe, Elyon, Lindsay, Naa, Zipporah, Chiedza | Submit weekly reports for assigned cluster campuses; read scoped grades/people and review alerts |
 
 Everyone can update their own name and password under **My profile**. Administrators can change their own email directly; others confirm a new email from their inbox (or ask an admin to set it on the **Accounts** page).
 
@@ -57,7 +57,7 @@ The Supabase URL and publishable key are in `lib/supabase.ts` (they are safe to 
 
 - Weekly reports remain due Friday at **10pm Europe/London**, including BST/GMT. A first submission after that deadline creates an in-app alert for every active admin/editor (currently Taija-lee, Ashley, Minister Bene and Pastor Awo). Editing an existing report does not generate duplicate alerts.
 - **Grades:** submit each student's assessment percentage. Scores strictly below 59% notify overall leads and the campus's cluster lead. Recipients use Notifications to mark their alerts as read; unread counts appear in navigation. Notifications are currently in-app, with no email delivery configured.
-- **People:** scoped phone/contact records track fellowship and branch attendance and follow-up notes. Archive instead of deleting. Cluster leads can read their cluster's records; they cannot edit campus submissions.
+- **People:** scoped phone/contact records track fellowship and branch attendance and follow-up notes. Archive instead of deleting. Cluster leads can read their cluster's people records and submit or update weekly reports for campuses within that cluster.
 - **Quarterly trends:** leadership and cluster accounts compare attendance, prayer, evangelism and outings by calendar quarter across seasons. Unreported data stays unknown.
 - **Materials:** admin/editor accounts upload private PDFs up to 20 MiB and 100 pages, for all campuses or one campus. Publishers prepare bounded PNG reading pages before publication. Campus/cluster accounts cannot access either original PDFs or clean page files. The `protected-material-page` Supabase Edge Function checks authorisation for every page, permanently stamps the reader identity/session/time into the image, and delivers only that page with no-store headers. Sessions expire after 15 minutes; page/session limits and private audit records deter bulk extraction. The canvas reader clears on focus loss, print/capture shortcuts and inactivity, with explicit resume. Operating-system screenshots, recording and photographing a screen cannot be reliably blocked. See [protected material deployment and contracts](supabase/PROTECTED_MATERIALS.md).
 - **Campus map:** 24 sourced university reference locations are provided, with OpenStreetMap attribution. They are not confirmed KOC meeting venues. Ambiguous locations remain unset; administrators edit coordinates, meetings, contact address and cluster on the map page. Natural Earth supplies the UK boundary.
@@ -70,3 +70,19 @@ See [database contracts and test instructions](supabase/WORKFLOWS.md). New migra
 ## Interface design
 
 See [DESIGN.md](DESIGN.md) for the interface foundations and editable Figma reference. Public, authentication and reporting screens share the warm white, charcoal and gold palette; preview/sample records are never published as live campus statistics.
+
+## Account administration and report records
+
+Administrators use **Accounts & access** to approve or decline applications and explicitly save role/status/scope changes. Campus and cluster assignments are required for those roles. Decisions are audited privately; the database serialises access changes to preserve at least one active administrator. Declining an application queues a rejection email with the administrator’s reason; repeat saves do not duplicate a decision. Later approval cancels unsent rejection jobs.
+
+Rejection and reporting email delivery use the `account-email-delivery` Edge Function. Configure `SMTP_HOST`, `SMTP_PORT=465`, `SMTP_USER`, `SMTP_PASSWORD` and `SMTP_FROM` in Supabase Edge Function secrets. Use a verified sender and implicit TLS; hosted Supabase blocks outgoing ports 25 and 587. No credentials belong in frontend variables or source control. Missing configuration leaves messages queued. The UI shows pending/sending/sent/failed/cancelled states and permits explicit retry. Sent means SMTP accepted the recipient, not guaranteed inbox delivery. Each batch claims at most three messages; failed attempts have a one-minute backoff and a five-attempt cap. A ten-minute lease permits recovery after interrupted delivery; SMTP cannot guarantee exactly-once delivery if sending succeeds before recording the result. The database scheduler retries deliverable queued messages every 15 minutes.
+
+The explicitly requested `okubep@gmail.com` account has a one-time, seven-day admin invitation bound to its Auth UUID. Its admin role stays pending until Supabase verifies the email. The confirmation link opens `/update-password` to let the owner choose their password. Other signups cannot grant themselves admin via user-editable metadata.
+
+Administrators can download a saved weekly report from **Campuses → weekly reports → PDF**. The PDF includes campus/cluster, reporting season, all submitted metrics and notes, submitter UUID, exact timestamps and late status. The record reflects the latest saved report; the audit retains earlier changes. PDF export uses only reports returned by the existing scoped queries. Cluster leads submit the same campus report format within their assigned cluster; administrators see those records immediately.
+
+### Friday leadership emails
+
+A `pg_cron` job runs every 15 minutes. At 23:00 on Friday in `Europe/London`, it queues exactly one summary per active administrator with a verified real email address, for the current season. The summary lists campuses without a submitted report and reports first submitted late by that snapshot; zero-valued submitted reports are not missing. Campus lead names and submitter names help admins follow up. BST/GMT transitions are tested. Placeholder `.example`/`.test` addresses and unverified accounts are excluded. The 23:00 snapshot does not continually change for later submissions; admins can view live records on the platform.
+
+The scheduler credential is generated server-side and encrypted in Supabase Vault. The Edge Function gateway permits cron requests but its handler verifies the worker credential or a signed-in active administrator before accessing the queue. Browser roles cannot read the credential or call worker RPCs. SMTP setup remains required for actual delivery. HTML and plaintext messages share KOC branding; see [email templates and hosted setup](supabase/EMAILS.md).

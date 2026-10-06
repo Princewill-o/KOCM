@@ -11,7 +11,7 @@ export function tabsFor(p: Profile): { id: Tab; label: string }[] {
   return [
     ...(p.role === 'admin' || p.role === 'editor' ? [{id:'overview' as Tab,label:'Overview'}] : []),
     {id:'campus',label:p.role === 'campus' ? 'My campus' : p.role === 'cluster' ? 'My cluster' : 'Campuses'},
-    ...(p.role !== 'cluster' ? [{id:'enter' as Tab,label:'Weekly report'}] : []),
+    {id:'enter',label:'Weekly report'},
     ...(p.role !== 'campus' ? [{id:'quarters' as Tab,label:'Quarterly trends'}] : []),
     {id:'grades',label:'Grades'}, {id:'contacts',label:'People'}, {id:'materials',label:'Materials'},
     {id:'notifications',label:'Notifications'}, {id:'map',label:'Campus map'},

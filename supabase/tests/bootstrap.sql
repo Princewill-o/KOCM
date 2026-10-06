@@ -11,3 +11,13 @@ alter table storage.objects enable row level security;
 create function storage.foldername(text) returns text[] language sql immutable as $$ select string_to_array($1,'/') $$;
 grant usage on schema public,auth,storage to authenticated,anon;
 grant select,insert,delete on storage.objects to authenticated;
+
+do $$ begin if not exists(select 1 from pg_roles where rolname='service_role') then create role service_role; end if; end $$;
+
+-- Isolated local scheduler/Vault stubs never call a live endpoint.
+create schema vault; create schema cron; create schema net;
+create table vault.decrypted_secrets(id uuid default gen_random_uuid(),name text,decrypted_secret text);
+create function vault.create_secret(text,text,text) returns uuid language plpgsql as $$ declare key uuid:=gen_random_uuid(); begin insert into vault.decrypted_secrets(id,name,decrypted_secret) values(key,$2,$1);return key;end $$;
+create table cron.job(jobid bigint generated always as identity,jobname text,schedule text,command text,active boolean default true);
+create function cron.schedule(text,text,text) returns bigint language plpgsql as $$ declare key bigint; begin insert into cron.job(jobname,schedule,command) values($1,$2,$3) returning jobid into key;return key;end $$;
+create function net.http_post(url text,headers jsonb,body jsonb,timeout_milliseconds integer) returns bigint language sql as $$ select 1::bigint $$;

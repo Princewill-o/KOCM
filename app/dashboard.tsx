@@ -142,7 +142,7 @@ export default function Dashboard() {
           {tab === 'overview' && allAccess && <Overview season={season} profile={profile} jump={jump} />}
           {tab === 'campus' && !visibleCampuses.length && <section className="panel padded"><h1>No campuses assigned yet</h1><p>An administrator must assign your campus or cluster before its statistics appear.</p></section>}
           {tab === 'campus' && !!visibleCampuses.length && <CampusView key={campusId} season={season} profile={profile} campuses={visibleCampuses} campusId={campusId} setCampusId={setCampusId} jump={jump} />}
-          {tab === 'enter' && profile.role !== 'cluster' && <ReportForm season={season} profile={profile} campuses={visibleCampuses} campusId={campusId} setCampusId={setCampusId} initialWeek={weekEnding} />}
+          {tab === 'enter' && <ReportForm season={season} profile={profile} campuses={visibleCampuses} campusId={campusId} setCampusId={setCampusId} initialWeek={weekEnding} />}
           {tab === 'accounts' && profile.role === 'admin' && <Accounts profile={profile} campuses={campuses} />}
           {tab === 'grades' && <Grades profile={profile} campuses={visibleCampuses} />}
           {tab === 'contacts' && <Contacts profile={profile} campuses={visibleCampuses} />}

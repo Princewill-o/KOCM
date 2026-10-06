@@ -1,0 +1,63 @@
+begin;
+create function pg_temp.assert_true(value boolean,message text) returns void language plpgsql as $$ begin if value is distinct from true then raise exception 'Assertion failed: %',message; end if; end $$;
+insert into auth.users(id,email,raw_app_meta_data) values
+ ('90000000-0000-0000-0000-000000000001','owner@example.test','{"koc_role":"admin"}'),
+ ('90000000-0000-0000-0000-000000000002','request@example.test','{}');
+select set_config('request.jwt.claim.sub','90000000-0000-0000-0000-000000000002',true);
+set local role authenticated;
+do $$ begin
+ begin perform public.admin_update_user('90000000-0000-0000-0000-000000000002','admin','active'); raise exception 'Self promotion allowed'; exception when insufficient_privilege then null; end;
+ begin perform public.list_account_email_deliveries(); raise exception 'Nonadmin delivery list allowed'; exception when insufficient_privilege then null; end;
+ begin perform public.claim_account_emails(); raise exception 'Browser claims emails'; exception when insufficient_privilege then null; end;
+end $$;
+reset role;
+select set_config('request.jwt.claim.sub','90000000-0000-0000-0000-000000000001',true);
+set local role authenticated;
+select public.admin_update_user('90000000-0000-0000-0000-000000000002',p_status=>'rejected',p_rejection_reason=>'Please speak with your campus lead.');
+select public.admin_update_user('90000000-0000-0000-0000-000000000002',p_status=>'rejected',p_rejection_reason=>'Please speak with your campus lead.');
+select pg_temp.assert_true((select count(*)=1 from public.list_account_email_deliveries()),'one decision queues one email');
+reset role;
+select pg_temp.assert_true((select reason='Please speak with your campus lead.' and status='pending' from private.account_email_deliveries),'reason retained');
+select pg_temp.assert_true((select count(*)=1 from private.account_access_audit),'decision audit persisted');
+set local role authenticated;
+select public.admin_update_user('90000000-0000-0000-0000-000000000002',p_role=>'cluster',p_status=>'active',p_cluster_id=>(select id from public.clusters where name='London'));
+reset role;
+select pg_temp.assert_true((select status='cancelled' from private.account_email_deliveries),'later approval cancels unsent rejection');
+set local role authenticated;
+select public.admin_update_user('90000000-0000-0000-0000-000000000002',p_role=>'admin');
+select public.admin_update_user('90000000-0000-0000-0000-000000000002',p_role=>'campus',p_campus_id=>(select id from public.campuses limit 1));
+do $$ begin
+ begin perform public.admin_update_user('90000000-0000-0000-0000-000000000001',p_status=>'rejected'); raise exception 'Last admin rejected'; exception when insufficient_privilege then null; end;
+end $$;
+reset role;
+insert into private.admin_invitations(email) values('invited@example.test');
+insert into auth.users(id,email,raw_user_meta_data) values('90000000-0000-0000-0000-000000000003','invited@example.test','{"koc_role":"admin"}');
+select pg_temp.assert_true((select status='pending' and role<>'admin' from public.profiles where email='invited@example.test'),'unverified invitation cannot activate');
+update auth.users set email_confirmed_at=now() where id='90000000-0000-0000-0000-000000000003';
+select pg_temp.assert_true((select role='admin' and status='active' from public.profiles where email='invited@example.test'),'verified invitation activates admin');
+select pg_temp.assert_true((select consumed_at is not null from private.admin_invitations),'invitation consumed once');
+-- User-editable claims cannot create authority for an ordinary email.
+insert into auth.users(id,email,raw_user_meta_data,email_confirmed_at) values('90000000-0000-0000-0000-000000000004','ordinary@example.test','{"koc_role":"admin"}',now());
+select pg_temp.assert_true((select status='pending' and role<>'admin' from public.profiles where email='ordinary@example.test'),'metadata cannot grant admin');
+select set_config('request.jwt.claim.sub','90000000-0000-0000-0000-000000000001',true);
+set local role authenticated;
+select public.admin_update_user('90000000-0000-0000-0000-000000000002',p_status=>'rejected',p_rejection_reason=>'Second decision.');
+reset role;
+set local role service_role;
+select pg_temp.assert_true((select count(*)=1 from public.claim_account_emails()),'worker claims one new rejection');
+select pg_temp.assert_true((select count(*)=0 from public.claim_account_emails()),'lease prevents double claim');
+reset role;
+select public.complete_account_email((select id from private.account_email_deliveries where status='sending'),false,'Retry required.');
+set local role service_role;
+select pg_temp.assert_true((select count(*)=0 from public.claim_account_emails()),'failed message cannot immediately retry');
+reset role;
+update private.account_email_deliveries set claimed_at=now()-interval '2 minutes' where status='failed';
+set local role service_role;
+select pg_temp.assert_true((select count(*)=1 from public.claim_account_emails()),'retry after backoff');
+reset role;
+select public.complete_account_email((select id from private.account_email_deliveries where status='sending'),true,null);
+set local role service_role;
+select pg_temp.assert_true((select count(*)=0 from public.claim_account_emails()),'sent message not claimed again');
+reset role;
+select pg_temp.assert_true((select attempts=2 and sent_at is not null from private.account_email_deliveries where status='sent'),'sent state persisted');
+rollback;

@@ -9,9 +9,9 @@ describe('workspace permissions', () => {
     expect(tabsFor(profile('campus')).map(t=>t.id)).toContain('enter');
     expect(tabsFor(profile('campus')).map(t=>t.id)).not.toContain('quarters');
   });
-  it('cluster leads read only assigned campuses and cannot enter weekly stats', () => {
+  it('cluster leads submit weekly stats only for assigned campuses', () => {
     expect(statsCampuses(profile('cluster'),campuses).map(c=>c.id)).toEqual(['own']);
-    expect(tabsFor(profile('cluster')).map(t=>t.id)).not.toContain('enter');
+    expect(tabsFor(profile('cluster')).map(t=>t.id)).toContain('enter');
     expect(tabsFor(profile('cluster')).map(t=>t.id)).toContain('quarters');
   });
   it('unassigned clusters have no statistics access', () => {

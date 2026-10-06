@@ -2,87 +2,92 @@
 import { useEffect, useState } from 'react';
 import { Check, X, Mail } from 'lucide-react';
 import { listClusters, type Cluster } from '@/lib/platform';
-import { listProfiles, adminUpdateUser, adminSetEmail, friendly, ROLE_LABELS, type Profile, type Campus, type Role, type Status } from '@/lib/koc';
+import { listProfiles, adminSetEmail, friendly, ROLE_LABELS, type Profile, type Campus, type Role, type Status } from '@/lib/koc';
+import { accessDraft, saveAccountAccess, listAccountEmailDeliveries, deliverAccountEmails, type AccessDraft, type AccountEmailDelivery } from '@/lib/account-admin';
 
 export default function Accounts({ profile, campuses }: { profile: Profile; campuses: Campus[] }) {
   const [clusters, setClusters] = useState<Cluster[]>([]);
   const [users, setUsers] = useState<Profile[] | null>(null);
+  const [drafts, setDrafts] = useState<Record<string, AccessDraft>>({});
+  const [deliveries, setDeliveries] = useState<AccountEmailDelivery[]>([]);
+  const [deliveryError, setDeliveryError] = useState('');
+  const [sendingError, setSendingError] = useState('');
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState('');
   const [editingEmail, setEditingEmail] = useState<{ id: string; value: string } | null>(null);
 
-  const refresh = () => listProfiles().then(setUsers).catch((e) => setError(friendly(e)));
-  useEffect(() => { refresh(); listClusters().then(setClusters).catch(e => setError(friendly(e))); }, []);
-
+  async function refresh(resetId?: string) {
+    const rows = await listProfiles(); setUsers(rows);
+    setDrafts(previous => Object.fromEntries(rows.map(user => [user.id,user.id === resetId ? accessDraft(user) : previous[user.id] ?? accessDraft(user)])));
+    try { setDeliveries(await listAccountEmailDeliveries()); setDeliveryError(''); }
+    catch (e) { setDeliveryError(friendly(e)); }
+  }
+  useEffect(() => {
+    let current = true;
+    listProfiles().then(rows => { if (current) { setUsers(rows); setDrafts(Object.fromEntries(rows.map(user => [user.id,accessDraft(user)]))); } }).catch(e => {if (current) setError(friendly(e));});
+    listClusters().then(rows => {if (current) setClusters(rows);}).catch(e => {if (current) setError(friendly(e));});
+    listAccountEmailDeliveries().then(rows => {if (current) setDeliveries(rows);}).catch(e => {if (current) setDeliveryError(friendly(e));});
+    return () => {current = false;};
+  }, []);
+  function change(id: string, patch: Partial<AccessDraft>) { setDrafts(previous => ({...previous,[id]:{...previous[id],...patch}})); }
   async function run(id: string, action: () => Promise<unknown>, done: string) {
     setBusy(id); setError(''); setMessage('');
-    try { await action(); await refresh(); setMessage(done); }
-    catch (e) { setError(friendly(e)); }
+    try { await action(); await refresh(id); setMessage(done); return true; }
+    catch (e) { setError(friendly(e)); return false; }
     finally { setBusy(''); }
   }
-
+  function save(user: Profile, draft: AccessDraft) {
+    return run(user.id, async () => { const result = await saveAccountAccess(user.id,draft); setSendingError(result.emailQueued ? 'Email sending is unavailable or not configured, or a message failed. Unsent messages remain saved for retry.' : ''); }, draft.status === 'rejected' ? `${user.full_name}'s access was declined. Check email delivery below.` : `${user.full_name}'s access updated.`);
+  }
   if (!users) return error ? <div className="management-alert" role="alert">{error}</div> : <p role="status" className="loading-line">Loading accounts…</p>;
-  const pending = users.filter((u) => u.status === 'pending');
-  const others = users;
-
+  const pending = users.filter(user => user.status === 'pending');
   return <>
-    <div className="page-heading"><div><div className="eyebrow">ADMINISTRATION</div><h1>Accounts &amp; access</h1><p>Approve campus representatives and manage who can see or enter statistics.</p></div></div>
+    <div className="page-heading"><div><div className="eyebrow">ADMINISTRATION</div><h1>Accounts &amp; access</h1><p>Review applications and assign administrator, campus or cluster access.</p></div></div>
     {error && <div className="management-alert" role="alert">{error}</div>}
     {message && <p role="status" className="success-message banner-message">{message}</p>}
     <section className="panel padded">
-      <h2>Pending campus requests</h2>
-      <p className="muted small">Approved representatives can view and update only their own university.</p>
+      <h2>Pending applications</h2><p className="muted small">Review the role and university or cluster in All accounts before approval. Declined applications queue an email; delivery status is shown below.</p>
       {!pending.length && <p className="empty-line">No pending requests.</p>}
-      {pending.map((u) => <div className="approval-row" key={u.id}>
-        <div><strong>{u.full_name}</strong><p>{u.email} · {u.campus?.name ?? 'No university'}</p></div>
-        <div><button className="button button-yellow" disabled={busy === u.id} onClick={() => run(u.id, () => adminUpdateUser(u.id, { status: 'active' }), `${u.full_name} approved.`)}><Check size={16} />Approve</button>
-          <button className="button" disabled={busy === u.id} onClick={() => run(u.id, () => adminUpdateUser(u.id, { status: 'rejected' }), `${u.full_name} declined.`)}><X size={16} />Decline</button></div>
+      {pending.map(user => <div className="approval-row" key={user.id}>
+        <div><strong>{user.full_name}</strong><p>{user.email} · {user.campus?.name ?? 'No university'}</p>
+          <label htmlFor={`decline-${user.id}`} className="small">Decline reason (included in email)</label>
+          <input id={`decline-${user.id}`} value={drafts[user.id].reason} maxLength={1000} disabled={!!busy} onChange={event => change(user.id,{reason:event.target.value})} />
+        </div>
+        <div><button className="button button-yellow" disabled={!!busy} onClick={() => save(user,{...drafts[user.id],status:'active'})}><Check size={16} />Approve</button>
+          <button className="button" disabled={!!busy || !drafts[user.id].reason.trim()} onClick={() => save(user,{...accessDraft(user),status:'rejected',reason:drafts[user.id].reason})}><X size={16} />Decline</button></div>
       </div>)}
     </section>
     <section className="panel padded accounts-panel">
-      <h2>Cluster leadership</h2>
-      <p className="muted small">Assign a verified existing account to a cluster below. A cluster lead sees only that cluster’s campuses. Named leads require their own verified email accounts before access can be assigned.</p>
-      <div className="management-table-wrap"><table><thead><tr><th>Cluster</th><th>Lead</th><th>Assigned account</th></tr></thead><tbody>{clusters.map(c => <tr key={c.id}><td>{c.name}</td><td>{c.lead_name}</td><td>{users.filter(u => u.role === 'cluster' && u.cluster_id === c.id && u.status === 'active').map(u => u.full_name).join(', ') || 'Awaiting account assignment'}</td></tr>)}</tbody></table></div>
+      <h2>Cluster leadership</h2><p className="muted small">Assign an existing verified account below. Cluster leads see only their assigned cluster and submit weekly reports for its campuses.</p>
+      <div className="management-table-wrap"><table><thead><tr><th>Cluster</th><th>Lead</th><th>Assigned account</th></tr></thead><tbody>{clusters.map(cluster => <tr key={cluster.id}><td>{cluster.name}</td><td>{cluster.lead_name}</td><td>{users.filter(user => user.role === 'cluster' && user.cluster_id === cluster.id && user.status === 'active').map(user => user.full_name).join(', ') || 'Awaiting account assignment'}</td></tr>)}</tbody></table></div>
     </section>
     <section className="panel padded accounts-panel">
-      <h2>All accounts</h2>
-      <p className="muted small"><strong>Administrator</strong>: everything, including accounts. <strong>Stats editor</strong>: sees all campuses and enters weekly stats for any campus. <strong>Campus rep</strong>: own university only. <strong>Cluster lead</strong>: reads assigned cluster campuses, grades and people.</p>
-      <div className="management-table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>University / cluster</th><th>Status</th></tr></thead>
-        <tbody>{others.map((u) => {
-          const self = u.id === profile.id;
-          return <tr key={u.id}>
-            <td><strong>{u.full_name}</strong>{self && <span className="muted"> (you)</span>}</td>
-            <td>{editingEmail?.id === u.id
-              ? <form className="inline-form" onSubmit={(e) => { e.preventDefault(); run(u.id, () => adminSetEmail(u.id, editingEmail.value), `Email updated for ${u.full_name}.`).then(() => setEditingEmail(null)); }}>
-                  <input type="email" value={editingEmail.value} onChange={(e) => setEditingEmail({ id: u.id, value: e.target.value })} aria-label={`New email for ${u.full_name}`} autoFocus />
-                  <button className="icon-text" disabled={busy === u.id}>Save</button><button type="button" className="icon-text" onClick={() => setEditingEmail(null)}>Cancel</button></form>
-              : <span className="email-cell">{u.email}<button className="icon-text" onClick={() => setEditingEmail({ id: u.id, value: u.email })} aria-label={`Change email for ${u.full_name}`}><Mail size={14} />Change</button></span>}</td>
-            <td><select className="table-select" value={u.role} disabled={busy === u.id}
-              onChange={(e) => {
-                const role = e.target.value as Role;
-                if (role === 'campus' && !u.campus_id) { setError('Choose a university for this person first, then make them a campus rep.'); return; }
-                if (role === 'cluster' && !u.cluster_id) { setError('Choose a cluster for this person first using the cluster assignment below.'); return; }
-                run(u.id, () => adminUpdateUser(u.id, { role, campusId: u.campus_id, clusterId: u.cluster_id }), `${u.full_name} is now ${ROLE_LABELS[role].toLowerCase()}.`);
-              }}>
-              {(Object.keys(ROLE_LABELS) as Role[]).map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}</select></td>
-            <td><div className="account-scope-controls">
-              <select className="table-select" value={u.campus_id ?? ''} disabled={busy === u.id} aria-label={`University for ${u.full_name}`}
-                onChange={e => run(u.id, () => adminUpdateUser(u.id, {role:'campus',campusId:e.target.value}), `${u.full_name} assigned to a university.`)}>
-                <option value="" disabled>{u.role === 'campus' ? 'Choose university' : 'Assign campus account…'}</option>
-                {campuses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-              <select className="table-select" value={u.role === 'cluster' ? u.cluster_id ?? '' : ''} disabled={busy === u.id} aria-label={`Cluster for ${u.full_name}`}
-                onChange={e => run(u.id, () => adminUpdateUser(u.id, {role:'cluster',clusterId:e.target.value}), `${u.full_name} assigned as cluster lead.`)}>
-                <option value="" disabled>Assign cluster lead…</option>{clusters.map(c => <option key={c.id} value={c.id}>{c.name} · {c.lead_name}</option>)}
-              </select>
-            </div></td>
-            <td><select className="table-select" value={u.status} disabled={busy === u.id}
-              onChange={(e) => run(u.id, () => adminUpdateUser(u.id, { status: e.target.value as Status }), `${u.full_name}'s access updated.`)}>
-              <option value="active">Active</option><option value="rejected">Blocked</option><option value="pending">Pending</option></select></td>
-          </tr>;
-        })}</tbody></table></div>
-      <p className="chart-explainer">Changing someone’s email here takes effect immediately — use it to replace temporary addresses. At least one active administrator is always kept.</p>
+      <h2>All accounts</h2><p className="muted small">Administrators manage all campuses and accounts. Stats editors manage all campus statistics. Campus leads access their own university. Cluster leads view and submit weekly reports for their assigned cluster. Changes take effect when you select Save access.</p>
+      <div className="management-table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>University / cluster</th><th>Status</th><th>Save</th></tr></thead><tbody>{users.map(user => {
+        const draft = drafts[user.id];
+        const unchanged = JSON.stringify(draft) === JSON.stringify(accessDraft(user));
+        return <tr key={user.id}>
+          <td><strong>{user.full_name}</strong>{user.id === profile.id && <span className="muted"> (you)</span>}</td>
+          <td>{editingEmail?.id === user.id ? <form className="inline-form" onSubmit={async event => {event.preventDefault(); const ok = await run(user.id,() => adminSetEmail(user.id,editingEmail.value),`Email updated for ${user.full_name}.`); if (ok) setEditingEmail(null);}}>
+            <input type="email" required value={editingEmail.value} onChange={event => setEditingEmail({id:user.id,value:event.target.value})} aria-label={`New email for ${user.full_name}`} autoFocus />
+            <button className="icon-text" disabled={!!busy}>Save</button><button type="button" className="icon-text" onClick={() => setEditingEmail(null)}>Cancel</button>
+          </form> : <span className="email-cell">{user.email}<button className="icon-text" disabled={!!busy} onClick={() => setEditingEmail({id:user.id,value:user.email})} aria-label={`Change email for ${user.full_name}`}><Mail size={14} />Change</button></span>}</td>
+          <td><select className="table-select" aria-label={`Role for ${user.full_name}`} value={draft.role} disabled={!!busy} onChange={event => change(user.id,{role:event.target.value as Role})}>{(Object.keys(ROLE_LABELS) as Role[]).map(role => <option key={role} value={role}>{ROLE_LABELS[role]}</option>)}</select></td>
+          <td>{draft.role === 'campus' ? <select className="table-select" value={draft.campusId} disabled={!!busy} aria-label={`University for ${user.full_name}`} onChange={event => change(user.id,{campusId:event.target.value})}><option value="">Choose university</option>{campuses.map(campus => <option key={campus.id} value={campus.id}>{campus.name}</option>)}</select> : draft.role === 'cluster' ? <select className="table-select" value={draft.clusterId} disabled={!!busy} aria-label={`Cluster for ${user.full_name}`} onChange={event => change(user.id,{clusterId:event.target.value})}><option value="">Choose cluster</option>{clusters.map(cluster => <option key={cluster.id} value={cluster.id}>{cluster.name} · {cluster.lead_name}</option>)}</select> : <span className="muted">All campuses</span>}</td>
+          <td><select className="table-select" value={draft.status} disabled={!!busy} aria-label={`Status for ${user.full_name}`} onChange={event => change(user.id,{status:event.target.value as Status})}><option value="active">Active</option><option value="rejected">Declined / blocked</option><option value="pending">Pending</option></select>
+            {draft.status === 'rejected' && <textarea aria-label={`Decline reason for ${user.full_name}`} placeholder="Reason included in email" maxLength={1000} value={draft.reason} disabled={!!busy} onChange={event => change(user.id,{reason:event.target.value})} />}</td>
+          <td><button className="button button-yellow" disabled={!!busy || unchanged} onClick={() => save(user,draft)}>{busy === user.id ? 'Saving…' : 'Save access'}</button>{!unchanged && <button className="icon-text" disabled={!!busy} onClick={() => change(user.id,accessDraft(user))}>Reset</button>}</td>
+        </tr>;
+      })}</tbody></table></div><p className="chart-explainer">Email changes take effect when you save the email. The system always keeps at least one active administrator.</p>
+    </section>
+    <section className="panel padded accounts-panel"><h2>Account and reporting emails</h2><p className="muted small">Queued messages have not been sent. Sent means the email provider accepted the message; inbox delivery is not guaranteed.</p>
+      <button className="button" disabled={!!busy} onClick={() => refresh().catch(e => setError(friendly(e)))}>Refresh status</button>
+      <button className="button" disabled={!!busy} onClick={() => run('emails',async () => { await deliverAccountEmails(); setSendingError(''); },'Email delivery attempted. Review each message status below.')}>Retry queued emails</button>
+      {sendingError && <p role="alert" className="management-alert">{sendingError}</p>}
+      {deliveryError && <p role="alert" className="management-alert">Email status unavailable: {deliveryError}</p>}
+      {!deliveryError && !deliveries.length && <p className="empty-line">No queued emails yet.</p>}
+      {!!deliveries.length && <div className="management-table-wrap"><table><thead><tr><th>Account</th><th>State</th><th>Queued</th><th>Sent</th></tr></thead><tbody>{deliveries.map(delivery => <tr key={delivery.id}><td>{users.find(user => user.id === delivery.user_id)?.email ?? 'Account'}</td><td>{delivery.status}{delivery.last_error && <p className="small muted">{delivery.last_error}</p>}</td><td>{new Date(delivery.created_at).toLocaleString('en-GB')}</td><td>{delivery.sent_at ? new Date(delivery.sent_at).toLocaleString('en-GB') : 'Not sent'}</td></tr>)}</tbody></table></div>}
     </section>
   </>;
 }

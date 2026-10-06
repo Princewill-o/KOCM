@@ -13,6 +13,7 @@ export type Profile = {
   campus_id: string | null;
   cluster_id?: string | null;
   created_at: string;
+  rejection_reason?: string | null;
   campus?: { name: string } | null;
 };
 export type Campus = { id: string; name: string; region: string; cluster_id?: string | null; latitude?: number | null; longitude?: number | null; address?: string | null; meeting_info?: string | null; contact_email?: string | null };
@@ -26,6 +27,7 @@ export type Report = {
   evangelism_minutes: number;
   outreach_outings: number;
   notes: string;
+  submitted_by?: string;
   submitted_at: string;
   updated_at: string;
   is_late: boolean;

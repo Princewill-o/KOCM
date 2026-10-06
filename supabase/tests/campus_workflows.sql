@@ -32,9 +32,10 @@ set local role authenticated;
 select pg_temp.assert_true((select count(*)=2 from public.grades),'cluster sees own grades');
 select pg_temp.assert_true(not private.can_access_campus((select id from public.campuses where name='Aston')),'cluster cannot read other cluster');
 do $$ begin
- begin perform public.submit_report('2026-09-18',10,30,20,1,'',(select id from public.campuses where name='Brunel')); raise exception 'Cluster report write allowed'; exception when insufficient_privilege then null; end;
+ begin perform public.submit_report('2026-09-18',10,30,20,1,'',(select id from public.campuses where name='Aston')); raise exception 'Cross-cluster report write allowed'; exception when insufficient_privilege then null; end;
  begin perform public.acknowledge_notification((select id from public.notifications where recipient_id='10000000-0000-0000-0000-000000000001' limit 1)); raise exception 'Acknowledged other notification'; exception when insufficient_privilege then null; end;
 end $$;
+select public.submit_report('2026-09-25',13,30,20,1,'Cluster submission',(select id from public.campuses where name='Brunel'));
 select public.acknowledge_notification((select id from public.notifications limit 1));
 select pg_temp.assert_true((select bool_and(read_at is not null) from public.notifications),'read acknowledgement persisted');
 reset role;
