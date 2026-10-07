@@ -127,30 +127,30 @@
   color-scheme: light;
 }
 .dark {
-  --background: #171b18;
-  --foreground: #f4f4f5;
-  --card: #202621;
-  --card-foreground: #f4f4f5;
-  --popover: #222326;
-  --popover-foreground: #f4f4f5;
-  --muted: #2c332d;
-  --muted-foreground: #a7b1a7;
-  --accent: #35301d;
-  --accent-foreground: #f4f4f5;
-  --border: #3c453c;
-  --input: #485348;
-  --secondary: #27282c;
-  --secondary-foreground: #f4f4f5;
+  --background: #050609;
+  --foreground: #f5f7fb;
+  --card: #0e1118;
+  --card-foreground: #f5f7fb;
+  --popover: #10141d;
+  --popover-foreground: #f5f7fb;
+  --muted: #191e29;
+  --muted-foreground: #a9b2c2;
+  --accent: #202838;
+  --accent-foreground: #f5f7fb;
+  --border: #2a3140;
+  --input: #3a4558;
+  --secondary: #191e29;
+  --secondary-foreground: #f5f7fb;
   --sidebar: var(--card);
   --popover: var(--card);
   --secondary: var(--muted);
   --secondary-foreground: var(--foreground);
-  --ring: #b6c596;
+  --ring: #dfbd53;
   --danger-foreground: #ff9f8e;
-  --chart-activity: #b6c596;
-  --map-water: #202b2d;
-  --map-land: #3a4538;
-  --map-outline: #8f9f84;
+  --chart-activity: #dfbd53;
+  --map-water: #090e17;
+  --map-land: #242c3b;
+  --map-outline: #8894ad;
   color-scheme: dark;
 }
 * {
@@ -1109,7 +1109,7 @@ h2 {
   font-size: 10px;
 }
 .dark .auth-brand-panel {
-  background: #171819;
+  background: var(--card);
   color: #f4f4f5;
   border-right: 1px solid var(--border);
 }

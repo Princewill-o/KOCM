@@ -32,7 +32,7 @@ The public landing page uses the supplied community, prayer and fellowship flyer
 
 Reusable landing components live in `components/ui`: liquid glass buttons use semantic links, soft backdrop blur and restrained inset highlights; TextHighlight animates marker underlines; LandingReveal introduces content gently. The supplied stepped image slider is adapted to shallow masks that preserve people’s faces, manual photo selection, keyboard arrows and swipe. Both themes and reduced motion are supported. Use the existing community photographs, not stock replacements.
 
-Grace is a landing-page and active-account dashboard FAQ dock, adapted from the supplied agent interface with lucide icons. It offers a declared local question bank in `lib/grace-faq.ts`, keyword matching, links to signup/login/recovery, and an honest fallback. It never reads account records, calls an AI service or performs account actions. Conversation history is memory-only and capped; opening focuses the input, Escape closes it and returns focus. No voice control is shown because voice is not implemented.
+Grace is a landing-page and active-account dashboard chat dock. Supabase securely calls the configured model with a bounded conversation and public KOC guidance. Suggested questions and unavailable AI use the shared FAQ bank. Label actual AI replies and FAQ fallbacks clearly, show a thinking state, and prevent duplicate sends. Grace cannot read account records or perform account actions. History is memory-only and capped; opening focuses the input, Escape closes it and returns focus. Explain that AI messages are processed by Groq and ask users to avoid private information. No voice control is shown because voice is not implemented.
 
 ## Dashboard polish and Grace mascot
 
@@ -40,4 +40,4 @@ Dashboard action buttons share the landing liquid-glass treatment. Existing butt
 
 ## Main brand mark
 
-Use the supplied flyer’s yellow Kharis On Campus lettering as the shared logo, extracted on transparency in `public/koc-yellow-logo.png`. `BrandLogo` supplies the same accessible mark on the landing header, dashboard navbar and all authentication screens; the browser icon uses the mark too. Preserve the yellow and purple edge in both themes rather than applying monochrome filters.
+Use the supplied flyer’s yellow Kharis On Campus lettering as the shared logo, extracted on transparency in `public/koc-yellow-logo.png`. `BrandLogo` supplies the same accessible mark on the landing header, dashboard navbar and all authentication screens; the browser icon uses the mark too. The shared mark is black lettering with a white outline in light mode and retains its yellow lettering and purple edge in dark mode. Midnight dark mode uses near-black #050609 backgrounds, #0e1118 surfaces, cool slate dividers and pale text; semantic tokens apply this consistently to the landing page, dashboard and authentication screens.
