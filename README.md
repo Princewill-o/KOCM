@@ -90,3 +90,9 @@ The scheduler credential is generated server-side and encrypted in Supabase Vaul
 ## Password recovery
 
 The hosted Auth Site URL is `https://kocm.vercel.app`. Exact `/update-password` and `/dashboard` redirect URLs are configured for the two existing Vercel sites and localhost:5173. Recovery requests redirect to the current app’s `/update-password`; the browser waits for Supabase’s callback/session exchange before showing the new-password form. Invalid or expired callbacks offer a new-link action. Open PKCE recovery links in the same browser that requested them, and use the newest email. App signup/reset forms require at least 12 characters. Never record or commit account passwords.
+
+### Grace and landing components
+
+The public page includes an Apply here signup link, liquid glass buttons, animated marker underlines and a manual community photo slider. The slider supports previous/next, direct selection, arrow keys and swipe; animations respect reduced-motion preferences.
+
+Grace is a local FAQ assistant on the landing page, with public answers maintained in `lib/grace-faq.ts`. It matches declared keywords and offers suggested questions, verified platform paths and an unknown-question fallback. No API key, AI provider, private-data lookup or backend write is involved. The conversation is stored only in component memory, capped at twenty messages and cleared on reload. Test coverage includes matching, unknown prompts, typed/suggested questions, focus restoration and carousel navigation.

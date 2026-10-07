@@ -1,0 +1,27 @@
+'use client';
+import {useState,useRef,useEffect,type FormEvent,type KeyboardEvent} from 'react';
+import {AnimatePresence,motion,useReducedMotion} from 'motion/react';
+import {MessageCircle,Send,X,ArrowUpRight,Sparkles} from 'lucide-react';
+import {answerGrace,GRACE_FAQS,type GraceFaq} from '@/lib/grace-faq';
+type Message={id:number;from:'grace'|'you';text:string;faq?:GraceFaq|null};
+export function AgentDock(){
+ const [open,setOpen]=useState(false),[draft,setDraft]=useState(''),[messages,setMessages]=useState<Message[]>([{id:0,from:'grace',text:'Hi, I’m Grace. I can help with KOC applications, accounts and campus reporting. Choose a question below or ask me in your own words.'}]);
+ const sequence=useRef(1),input=useRef<HTMLTextAreaElement>(null),trigger=useRef<HTMLButtonElement>(null),log=useRef<HTMLDivElement>(null),reduced=useReducedMotion();
+ useEffect(()=>{if(open)input.current?.focus();},[open]);
+ useEffect(()=>{if(open&&log.current)log.current.scrollTop=log.current.scrollHeight;},[messages,open]);
+ function close(){setOpen(false);trigger.current?.focus();}
+ function ask(question:string,known?:GraceFaq){const text=question.trim();if(!text)return;const result=known?{faq:known,answer:known.answer}:answerGrace(text);const next:Message[]=[{id:sequence.current++,from:'you',text},{id:sequence.current++,from:'grace',text:result.answer,faq:result.faq}];setMessages(previous=>[...previous.slice(-18),...next]);setDraft('');input.current?.focus();}
+ function submit(event:FormEvent){event.preventDefault();ask(draft);}
+ function keyDown(event:KeyboardEvent<HTMLTextAreaElement>){if(event.key==='Enter'&&!event.shiftKey&&!event.nativeEvent.isComposing){event.preventDefault();ask(draft);}}
+ return <aside className="grace-dock" aria-label="Grace FAQ assistant">
+  <AnimatePresence>{open&&<motion.section className="grace-panel" role="dialog" aria-label="Chat with Grace" initial={reduced?false:{opacity:0,y:12,scale:.98}} animate={{opacity:1,y:0,scale:1}} exit={{opacity:0,y:8}} transition={{duration:reduced?0:.2}} onKeyDown={event=>{if(event.key==='Escape'){event.preventDefault();close();}}}>
+   <header><div className="grace-avatar" aria-hidden="true"><Sparkles size={20}/></div><div><h2>Grace</h2><p>Your KOC FAQ assistant</p></div><button type="button" aria-label="Close Grace" onClick={close}><X size={18}/></button></header>
+   <div className="grace-log" role="log" aria-live="polite" aria-relevant="additions" aria-label="Conversation with Grace" ref={log}>{messages.map(message=><div key={message.id} className={`grace-message grace-${message.from}`}><span>{message.from==='grace'?'Grace':'You'}</span><p>{message.text}</p>{message.faq?.href&&<a href={message.faq.href}>{message.faq.linkLabel}<ArrowUpRight size={14}/></a>}</div>)}</div>
+   <details className="grace-questions" open={messages.length===1||undefined}><summary>Common questions</summary><div>{GRACE_FAQS.map(faq=><button key={faq.id} type="button" onClick={()=>ask(faq.question,faq)}>{faq.question}</button>)}</div></details>
+   <form onSubmit={submit}><label className="sr-only" htmlFor="grace-question">Ask Grace a question</label><textarea id="grace-question" ref={input} value={draft} onChange={event=>setDraft(event.target.value)} onKeyDown={keyDown} placeholder="Ask about KOC…" rows={2} maxLength={500}/><button aria-label="Send question" type="submit" disabled={!draft.trim()}><Send size={18}/></button></form>
+   <p className="grace-privacy">FAQ answers only · Please don’t share private details.</p>
+  </motion.section>}</AnimatePresence>
+  <button className="grace-trigger liquid-button" ref={trigger} type="button" aria-expanded={open} aria-label={open?'Close Grace FAQ assistant':'Ask Grace'} onClick={()=>{if(open)close();else setOpen(true);}}><MessageCircle size={19}/><span>Ask Grace</span><span className="grace-trigger-note">KOC help</span></button>
+ </aside>;
+}
+export default AgentDock;

@@ -27,3 +27,9 @@ Keep keyboard focus visible, labels associated with controls, and tap targets at
 The admin campus network adapts the dotted globe reference into a UK-only SVG with keyboard-accessible campus pins. Missing locations remain searchable rather than receiving invented coordinates. University coordinates are reference points, not confirmed fellowship venues. Lead contact details appear only in the authenticated admin view.
 
 The public landing page uses the supplied community, prayer and fellowship flyer images in their original aspect ratios, with optimized JPEG derivatives. The fellowship flyer is adapted into transparent lettering only: Kharis On Campus and Fellowship with us every Tuesday. Faces, blank venue fields and the rectangular background are removed; a soft halo blends the artwork into either page theme. Both themes use semantic surface and text tokens; purple is reserved for the fellowship section.
+
+## Public interactions
+
+Reusable landing components live in `components/ui`: liquid glass buttons use semantic links, soft backdrop blur and restrained inset highlights; TextHighlight animates marker underlines; LandingReveal introduces content gently. The supplied stepped image slider is adapted to shallow masks that preserve people’s faces, manual photo selection, keyboard arrows and swipe. Both themes and reduced motion are supported. Use the existing community photographs, not stock replacements.
+
+Grace is a landing-page FAQ dock, adapted from the supplied agent interface with lucide icons. It offers a declared local question bank in `lib/grace-faq.ts`, keyword matching, links to signup/login/recovery, and an honest fallback. It never reads account records, calls an AI service or performs account actions. Conversation history is memory-only and capped; opening focuses the input, Escape closes it and returns focus. No voice control is shown because voice is not implemented.
