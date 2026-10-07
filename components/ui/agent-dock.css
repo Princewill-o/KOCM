@@ -5,3 +5,5 @@
 @media(max-width:650px){.grace-dock{right:16px;bottom:16px}.grace-panel textarea{font-size:16px}.grace-trigger-note{display:none}.grace-panel{max-height:calc(100svh - 95px)}.grace-dock[data-placement="dashboard"]{bottom:105px}.grace-dock[data-placement="dashboard"] .grace-panel{max-height:calc(100svh - 185px)}}
 @media print{.grace-dock{display:none}}
 @media(max-height:650px){.grace-log{min-height:40px}.grace-questions>div{max-height:80px}.grace-panel header{padding:10px 14px}.grace-panel form{padding:8px 12px}.grace-privacy{padding-bottom:8px}}
+
+.grace-message small{display:block;margin:8px 0;color:var(--muted-foreground);font-size:11px;line-height:1.5}
