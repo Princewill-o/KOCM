@@ -1,4 +1,5 @@
 'use client';
+import BrandLogo from '@/components/ui/brand-logo';
 import { useCallback, useEffect, useState } from 'react';
 import { LogOut, LayoutDashboard, Building2, ClipboardPen, UsersRound, UserRound, GraduationCap, BookOpen, Bell, ChartNoAxesCombined, ContactRound, MapPin } from 'lucide-react';
 import FloatingNav from './components/floating-nav';
@@ -115,7 +116,7 @@ export default function Dashboard() {
 
   return <div className="app-shell">
     <header className="site-header">
-      <a className="brand" href="/dashboard"><span className="logo-box"><img src="/kharis-logo.png" alt="Kharis dove" /></span><span>KHARIS<span className="brand-small">ON CAMPUS</span></span></a>
+      <a className="brand" href="/dashboard"><BrandLogo /></a>
 
       <div className="header-actions">
         <ThemeToggle />

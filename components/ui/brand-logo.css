@@ -1,0 +1,3 @@
+.landing-brand img.brand-mark,.brand img.brand-mark,.auth-brand img.brand-mark,.dark .landing-brand img.brand-mark,.dark .auth-brand img.brand-mark{display:block;object-fit:contain;filter:none;width:82px;height:58px}
+.auth-brand img.brand-mark,.dark .auth-brand img.brand-mark{width:112px;height:82px}
+@media(max-width:650px){.landing-brand img.brand-mark,.brand img.brand-mark,.auth-brand img.brand-mark,.dark .landing-brand img.brand-mark,.dark .auth-brand img.brand-mark{width:72px;height:52px}}

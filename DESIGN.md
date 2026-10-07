@@ -37,3 +37,7 @@ Grace is a landing-page and active-account dashboard FAQ dock, adapted from the 
 ## Dashboard polish and Grace mascot
 
 Dashboard action buttons share the landing liquid-glass treatment. Existing button semantics, disabled states and authorization are retained. Page changes and headings use brief fade/marker animations; reduced motion disables them. The generated yellow bear in a yellow Kharis On Campus hoodie identifies Grace in both the dock and chat header. Shared button/chat CSS lives beside the reusable components. The dashboard dock sits above the circular navigation, with smaller-height layouts keeping the question input visible.
+
+## Main brand mark
+
+Use the supplied flyer’s yellow Kharis On Campus lettering as the shared logo, extracted on transparency in `public/koc-yellow-logo.png`. `BrandLogo` supplies the same accessible mark on the landing header, dashboard navbar and all authentication screens; the browser icon uses the mark too. Preserve the yellow and purple edge in both themes rather than applying monochrome filters.

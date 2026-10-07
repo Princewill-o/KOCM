@@ -1,4 +1,5 @@
 "use client";
+import BrandLogo from '@/components/ui/brand-logo';
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
@@ -165,8 +166,7 @@ export default function AuthPage({ mode = "login" }: { mode?: Mode }) {
     <main className="auth-layout">
       <section className="auth-brand-panel">
         <Link className="auth-brand" href="/">
-          <img src="/kharis-logo.png" alt="" />
-          <span>Kharis On Campus</span>
+          <BrandLogo />
         </Link>
         <div className="auth-brand-description">
           <span className="auth-section-label">CAMPUS WORKSPACE</span>

@@ -1,3 +1,4 @@
+import BrandLogo from '@/components/ui/brand-logo';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { ThemeToggle } from './theme';
@@ -11,7 +12,7 @@ import AgentDock from '@/components/ui/agent-dock';
 export default function Home() {
   return <main className="koc-landing">
     <header className="landing-header">
-      <Link href="/" className="landing-brand"><img src="/kharis-logo.png" alt="" /><span>Kharis On Campus</span></Link>
+      <Link href="/" className="landing-brand"><BrandLogo /></Link>
       <div className="landing-header-actions"><ThemeToggle /><LiquidButton asChild size="sm"><Link href="/login">Member login <ArrowRight size={16} /></Link></LiquidButton></div>
     </header>
 
