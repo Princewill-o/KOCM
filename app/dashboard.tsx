@@ -1,6 +1,6 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
-import { LogOut, LayoutDashboard, Building2, ClipboardPen, UsersRound, UserRound, GraduationCap, BookOpen, Bell, ChartNoAxesCombined, ContactRound } from 'lucide-react';
+import { LogOut, LayoutDashboard, Building2, ClipboardPen, UsersRound, UserRound, GraduationCap, BookOpen, Bell, ChartNoAxesCombined, ContactRound, MapPin } from 'lucide-react';
 import FloatingNav from './components/floating-nav';
 import { ThemeToggle } from './theme';
 import { supabase } from '@/lib/supabase';
@@ -8,6 +8,7 @@ import { currentProfile, currentSeason, listCampuses, signOut, canSeeAllCampuses
 import type { Season } from '@/lib/reporting';
 import Overview from './views/overview';
 import CampusView from './views/campus-view';
+import CampusNetwork from './views/campus-network';
 import ReportForm from './views/report-form';
 import Accounts from './views/accounts';
 import ProfileView from './views/profile';
@@ -15,7 +16,7 @@ import './management.css';
 import './features.css';
 
 export type { Tab } from '@/lib/access';
-import { tabsFor, statsCampuses, type Tab } from '@/lib/access';
+import { tabsFor, statsCampuses, navigationFor, type Tab } from '@/lib/access';
 import { listTrendReports, unreadNotificationCount } from '@/lib/platform';
 import type { Report } from '@/lib/koc';
 import Grades from './views/grades';
@@ -24,7 +25,7 @@ import Materials from './views/materials';
 import Notifications from './views/notifications';
 import QuarterlyTrends from './views/quarterly-trends';
 export type Jump = (tab: Tab, opts?: { campusId?: string; weekEnding?: string }) => void;
-const navIcons = { overview: LayoutDashboard, campus: Building2, enter: ClipboardPen, accounts: UsersRound, profile: UserRound, grades: GraduationCap, contacts: ContactRound, materials: BookOpen, notifications: Bell, quarters: ChartNoAxesCombined };
+const navIcons = { overview: LayoutDashboard, campus: Building2, enter: ClipboardPen, accounts: UsersRound, profile: UserRound, grades: GraduationCap, contacts: ContactRound, materials: BookOpen, notifications: Bell, quarters: ChartNoAxesCombined, map: MapPin };
 
 function QuarterView({campuses}: {campuses: Campus[]}) {
   const [reports,setReports] = useState<Report[]>([]);
@@ -58,7 +59,7 @@ export default function Dashboard() {
       const fromHash = window.location.hash.slice(1) as Tab;
       const initialTab = tabs.some((t) => t.id === fromHash) ? fromHash : tabs[0].id;
       setTab(initialTab);
-      if (window.location.hash === '#map') history.replaceState(null, '', `#${initialTab}`);
+      if (fromHash && fromHash !== initialTab) history.replaceState(null, '', `#${initialTab}`);
       if (p.status === 'active') {
         const [s, c] = await Promise.all([currentSeason(), listCampuses()]);
         setSeason(s); setCampuses(c);
@@ -95,7 +96,7 @@ export default function Dashboard() {
     setWeekEnding(opts?.weekEnding ?? '');
     setTab(next);
     history.replaceState(null, '', `#${next}`);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
   };
 
   async function logout() {
@@ -105,6 +106,7 @@ export default function Dashboard() {
   }
 
   const tabs = profile ? tabsFor(profile) : [];
+  const navigation = profile ? navigationFor(profile, tab) : { primary: [], secondary: [], active: tab };
   const allAccess = canSeeAllCampuses(profile);
   const visibleCampuses = profile ? statsCampuses(profile, campuses) : [];
 
@@ -118,9 +120,10 @@ export default function Dashboard() {
         <button className="quiet-link" onClick={logout} aria-label="Log out" title="Log out"><LogOut size={18} /></button>
       </div>
     </header>
-    <FloatingNav items={tabs.map(item => ({ ...item, icon: navIcons[item.id] }))} active={tab} unread={unread} onSelect={next => jump(next)} />
+    <FloatingNav items={navigation.primary.map(item => ({ ...item, icon: navIcons[item.id] }))} active={navigation.active} unread={unread} onSelect={next => jump(next)} />
     <main className="workspace">
       <div className="breadcrumb">Kharis On Campus Management<span>/ {tabs.find((t) => t.id === tab)?.label}</span></div>
+      {navigation.secondary.length > 1 && <nav className="section-navigation" aria-label="Section navigation">{navigation.secondary.map(item => <button type="button" key={item.id} aria-current={tab === item.id ? 'page' : undefined} onClick={() => jump(item.id)}>{item.label}</button>)}</nav>}
       {error && <div className="management-alert" role="alert">{error}</div>}
       {loading ? <p role="status" className="loading-line">Loading your workspace…</p>
         : !profile ? null
@@ -144,6 +147,7 @@ export default function Dashboard() {
           {tab === 'campus' && !visibleCampuses.length && <section className="panel padded"><h1>No campuses assigned yet</h1><p>An administrator must assign your campus or cluster before its statistics appear.</p></section>}
           {tab === 'campus' && !!visibleCampuses.length && <CampusView key={campusId} season={season} profile={profile} campuses={visibleCampuses} campusId={campusId} setCampusId={setCampusId} jump={jump} />}
           {tab === 'enter' && <ReportForm season={season} profile={profile} campuses={visibleCampuses} campusId={campusId} setCampusId={setCampusId} initialWeek={weekEnding} />}
+          {tab === 'map' && profile.role === 'admin' && <CampusNetwork jump={jump} />}
           {tab === 'accounts' && profile.role === 'admin' && <Accounts profile={profile} campuses={campuses} />}
           {tab === 'grades' && <Grades profile={profile} campuses={visibleCampuses} />}
           {tab === 'contacts' && <Contacts profile={profile} campuses={visibleCampuses} />}

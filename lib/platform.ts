@@ -3,6 +3,17 @@ import { collectPages } from './pagination';
 import { supabase, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './supabase';
 import { friendly, type Report } from './koc';
 
+export type CampusLeadProfile = {
+  campus_id: string; campus_name: string; region: string;
+  latitude: number | null; longitude: number | null; meeting_info: string | null;
+  address: string | null; cluster_name: string | null; lead_id: string | null;
+  lead_name: string | null; lead_email: string | null; lead_phone: string | null;
+  lead_course: string | null; lead_year: number | null; lead_bio: string | null;
+};
+export async function listCampusLeadProfiles(): Promise<CampusLeadProfile[]> {
+  return checked(await supabase().rpc('campus_lead_profiles'));
+}
+
 export type Cluster = { id: string; name: string; lead_name: string; is_active: boolean };
 export type Grade = { id: string; campus_id: string; student_name: string; course: string; assessment: string; percentage: number; assessment_date: string; notes: string; submitted_by: string; created_at: string };
 export type Contact = { id: string; campus_id: string; full_name: string; phone: string; fellowship_attended: boolean; branch_attended: boolean; notes: string; is_active: boolean; created_by: string; created_at: string; updated_at: string };

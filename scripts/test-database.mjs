@@ -26,7 +26,7 @@ let created = false;
 try {
   command('createdb', [database]);
   created = true;
-  const files = [path.join(root, 'supabase/tests/bootstrap.sql'), ...readdirSync(path.join(root, 'supabase/migrations')).filter(f => f.endsWith('.sql')).sort().map(f => path.join(root, 'supabase/migrations', f)), path.join(root, 'supabase/tests/campus_workflows.sql'), path.join(root, 'supabase/tests/account_administration.sql'), path.join(root, 'supabase/tests/weekly_admin_email_digest.sql')];
+  const files = [path.join(root, 'supabase/tests/bootstrap.sql'), ...readdirSync(path.join(root, 'supabase/migrations')).filter(f => f.endsWith('.sql')).sort().map(f => path.join(root, 'supabase/migrations', f)), path.join(root, 'supabase/tests/campus_workflows.sql'), path.join(root, 'supabase/tests/account_administration.sql'), path.join(root, 'supabase/tests/campus_lead_profiles.sql'), path.join(root, 'supabase/tests/weekly_admin_email_digest.sql')];
   command('psql', ['--no-psqlrc', '--set', 'ON_ERROR_STOP=1', '--dbname', database, ...files.flatMap(file => ['--file', file])]);
   console.log('Database migration and campus authorization tests passed.');
 } finally {

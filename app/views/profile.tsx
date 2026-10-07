@@ -2,13 +2,14 @@
 import { useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { updateOwnName, changeOwnEmail, changePassword, adminSetEmail, friendly, ROLE_LABELS, type Profile } from '@/lib/koc';
+import { updateOwnProfile, changeOwnEmail, changePassword, adminSetEmail, friendly, ROLE_LABELS, type Profile } from '@/lib/koc';
 
 type Feedback = { ok?: string; err?: string };
 const TEMP_DOMAIN = '@koc.example';
 
 export default function ProfileView({ profile, onChange }: { profile: Profile; onChange: () => Promise<void> | void }) {
   const [name, setName] = useState(profile.full_name);
+  const [details, setDetails] = useState({ phone: profile.phone ?? '', course: profile.course ?? '', studyYear: profile.study_year?.toString() ?? '', bio: profile.bio ?? '' });
   const [email, setEmail] = useState(profile.email);
   const [pw, setPw] = useState({ current: '', next: '', confirm: '' });
   const [fb, setFb] = useState<Record<'name' | 'email' | 'pw', Feedback>>({ name: {}, email: {}, pw: {} });
@@ -23,7 +24,7 @@ export default function ProfileView({ profile, onChange }: { profile: Profile; o
     finally { setBusy(''); }
   }
 
-  const saveName = () => act('name', async () => { await updateOwnName(profile.id, name); await onChange(); return 'Your name has been updated.'; });
+  const saveName = () => act('name', async () => { await updateOwnProfile({ fullName: name, phone: details.phone, course: details.course, studyYear: details.studyYear === '' ? null : Number(details.studyYear), bio: details.bio }); await onChange(); return 'Your personal profile has been updated.'; });
   const saveEmail = () => act('email', async () => {
     const next = email.trim().toLowerCase();
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(next)) throw new Error('Enter a valid email address.');
@@ -44,14 +45,18 @@ export default function ProfileView({ profile, onChange }: { profile: Profile; o
 
   return <>
     <div className="page-heading"><div><div className="eyebrow">MY PROFILE</div><h1>{profile.full_name}</h1>
-      <p>{ROLE_LABELS[profile.role]}{profile.campus?.name ? ` · ${profile.campus.name}` : profile.role !== 'campus' ? ' · All campuses' : ''}</p></div></div>
+      <p>{ROLE_LABELS[profile.role]}{profile.campus?.name ? ` · ${profile.campus.name}` : profile.role === 'cluster' ? ' · Assigned cluster' : profile.role !== 'campus' ? ' · All campuses' : ''}</p></div></div>
     <div className="profile-grid">
       <section className="panel padded">
-        <h2>Your details</h2>
+        <h2>Your personal details</h2><p className="muted small">Your account belongs to you. Campus statistics remain with the university, even if its lead changes. Leadership can review your contact and study details.</p>
         <form className="management-form" onSubmit={(e) => { e.preventDefault(); saveName(); }}>
           <label>Full name<Input value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" maxLength={100} /></label>
+          <label>Phone number<Input type="tel" value={details.phone} onChange={event => setDetails({...details,phone:event.target.value})} autoComplete="tel" maxLength={40} /><small>Optional; include your country code.</small></label>
+          <label>Course<Input value={details.course} onChange={event => setDetails({...details,course:event.target.value})} maxLength={120} /></label>
+          <label>Year of study<select value={details.studyYear} onChange={event => setDetails({...details,studyYear:event.target.value})}><option value="">Not provided</option>{Array.from({length:10},(_,i) => i+1).map(year => <option key={year} value={year}>Year {year}</option>)}</select></label>
+          <label>About you<textarea value={details.bio} onChange={event => setDetails({...details,bio:event.target.value})} rows={4} maxLength={1000} /><small>Optional; up to 1,000 characters.</small></label>
           {note(fb.name)}
-          <button className="button button-yellow" disabled={busy === 'name' || name.trim() === profile.full_name}>{busy === 'name' ? 'Saving…' : 'Save name'}<ArrowRight size={16} /></button>
+          <button className="button button-yellow" disabled={!!busy}>{busy === 'name' ? 'Saving…' : 'Save profile'}<ArrowRight size={16} /></button>
         </form>
         <form className="management-form divider-top" onSubmit={(e) => { e.preventDefault(); saveEmail(); }}>
           <label>Email address<Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />

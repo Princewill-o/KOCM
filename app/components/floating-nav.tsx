@@ -18,7 +18,7 @@ export default function FloatingNav({ items, active, unread, onSelect }: Props) 
     const update = () => {
       const button = buttons.current.get(active);
       if (!button) return;
-      setIndicator({ x: button.offsetLeft + (button.offsetWidth - 48) / 2, y: button.offsetTop - 8, visible: true });
+      setIndicator({ x: button.offsetLeft + (button.offsetWidth - 44) / 2, y: button.offsetTop - 6, visible: true });
       const viewport = scroller.current;
       if (viewport) {
         const left = button.offsetLeft;
@@ -47,7 +47,7 @@ export default function FloatingNav({ items, active, unread, onSelect }: Props) 
           aria-label={id === 'notifications' && unread ? `${label}, ${unread} unread` : label}
           onClick={() => onSelect(id)} title={label}
         >
-          <span className="floating-nav-icon"><Icon size={21} strokeWidth={1.8} aria-hidden="true" />{id === 'notifications' && unread > 0 && <span className="floating-nav-badge">{unread > 99 ? '99+' : unread}</span>}</span>
+          <span className="floating-nav-icon"><Icon size={20} strokeWidth={1.8} aria-hidden="true" />{id === 'notifications' && unread > 0 && <span className="floating-nav-badge">{unread > 99 ? '99+' : unread}</span>}</span>
           <span className="floating-nav-label">{label}</span>
         </button>)}
       </div>

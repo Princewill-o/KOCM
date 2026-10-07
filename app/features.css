@@ -34,7 +34,7 @@
   margin-top: 24px;
 }
 .feature-low {
-  color: #a63429;
+  color: var(--danger-foreground);
 }
 .feature-notification,
 .feature-material {
@@ -62,19 +62,19 @@
   display: block;
   width: 100%;
   max-height: 600px;
-  background: #edf3f3;
+  background: var(--map-water);
   border-radius: 6px;
 }
 .feature-land {
-  fill: #e3e1cf;
-  stroke: #b3b7a9;
+  fill: var(--map-land);
+  stroke: var(--map-outline);
   stroke-width: 2;
 }
 .feature-uk-map [role="button"] {
   cursor: pointer;
 }
 .feature-uk-map [role="button"]:focus circle {
-  stroke: #232018;
+  stroke: var(--foreground);
   stroke-width: 4;
 }
 .feature-campus-list {
@@ -95,7 +95,7 @@
   gap: 4px;
 }
 .feature-campus-choice.selected {
-  border-color: #bc8f23;
+  border-color: var(--ring);
   background: var(--accent);
 }
 .feature-reader {
@@ -137,4 +137,11 @@
   .feature-reader {
     display: none !important;
   }
+}
+.management-form input[type="checkbox"] {
+  width: 18px;
+  min-height: 18px;
+  height: 18px;
+  padding: 0;
+  flex-shrink: 0;
 }

@@ -131,8 +131,8 @@
   flex-shrink: 0;
 }
 .auth-layout .icon-button {
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   border-radius: 5px;
   border: 1px solid var(--border);
   background: transparent;
@@ -184,7 +184,7 @@
   font-family: inherit;
   font-size: 14px;
   font-weight: 400;
-  border: 1px solid var(--border);
+  border: 1px solid var(--input);
   border-radius: 5px;
   box-shadow: none;
   padding: 11px 12px;
@@ -193,9 +193,9 @@
 }
 .auth-content .management-form input:focus,
 .auth-content .management-form select:focus {
-  outline: 2px solid var(--foreground);
+  outline: 2px solid var(--ring);
   outline-offset: 2px;
-  border-color: var(--foreground);
+  border-color: var(--ring);
   box-shadow: none;
 }
 .auth-content .management-form small {
@@ -264,7 +264,7 @@
 }
 .auth-layout a:focus-visible,
 .auth-layout button:focus-visible {
-  outline: 2px solid var(--foreground);
+  outline: 2px solid var(--ring);
   outline-offset: 4px;
 }
 @media (min-width: 1600px) {

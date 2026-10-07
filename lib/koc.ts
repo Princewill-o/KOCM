@@ -11,6 +11,10 @@ export type Profile = {
   role: Role;
   status: Status;
   campus_id: string | null;
+  phone?: string | null;
+  course?: string | null;
+  study_year?: number | null;
+  bio?: string | null;
   cluster_id?: string | null;
   created_at: string;
   rejection_reason?: string | null;
@@ -69,6 +73,7 @@ export const canSeeAllCampuses = (p: Profile | null) => !!p && p.status === 'act
 export function friendly(error: unknown): string {
   const e = error as { message?: string; code?: string; status?: number } | null;
   const message = e?.message ?? '';
+  if (/profiles_one_active_campus_lead|already has an active campus lead/i.test(message)) return 'This university already has an active campus lead. Reassign or deactivate that lead first.';
   if (/invalid login credentials/i.test(message)) return 'Email or password is incorrect.';
   if (/email not confirmed/i.test(message)) return 'Please confirm your email address first — check your inbox for the link.';
   if (/user already registered/i.test(message)) return 'An account with this email already exists. Try logging in.';
@@ -136,6 +141,15 @@ export async function changeOwnEmail(email: string) {
     await supabase().auth.updateUser({ email: email.trim().toLowerCase() }, { emailRedirectTo: `${window.location.origin}/dashboard` }),
   );
   return data.user;
+}
+
+export type OwnProfileDetails = { fullName: string; phone: string; course: string; studyYear: number | null; bio: string };
+export async function updateOwnProfile(details: OwnProfileDetails): Promise<Profile> {
+  return check(await supabase().rpc('update_my_profile', {
+    p_full_name: details.fullName.trim(), p_phone: details.phone.trim() || null,
+    p_course: details.course.trim() || null, p_study_year: details.studyYear,
+    p_bio: details.bio.trim() || null,
+  })) as Profile;
 }
 
 export async function updateOwnName(id: string, fullName: string) {
