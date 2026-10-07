@@ -6,7 +6,7 @@ import AgentDock from '../components/ui/agent-dock';
 afterEach(cleanup);
 it('opens Grace, answers a typed FAQ and restores focus on Escape',async()=>{
  render(createElement(AgentDock));const trigger=screen.getByRole('button',{name:'Ask Grace'});fireEvent.click(trigger);
- const dialog=screen.getByRole('dialog',{name:'Chat with Grace'});const input=within(dialog).getByRole('textbox',{name:'Ask Grace a question'});
+ const dialog=screen.getByRole('dialog',{name:'Chat with Grace'});expect(within(dialog).getByRole('img',{name:'Grace, a yellow bear in a Kharis On Campus hoodie'}).getAttribute('src')).toBe('/community/grace-bear.png');const input=within(dialog).getByRole('textbox',{name:'Ask Grace a question'});
  expect(document.activeElement).toBe(input);fireEvent.change(input,{target:{value:'when is the weekly report due?'}});fireEvent.click(within(dialog).getByRole('button',{name:'Send question'}));
  expect(within(dialog).getByText(/Weekly reports are due every Friday before 10pm UK time/)).toBeTruthy();expect(within(dialog).getByRole('link',{name:'Open your workspace'}).getAttribute('href')).toBe('/login');
  fireEvent.keyDown(dialog,{key:'Escape'});await waitFor(()=>expect(screen.queryByRole('dialog')).toBeNull());expect(document.activeElement).toBe(trigger);

@@ -14,6 +14,9 @@ import Accounts from './views/accounts';
 import ProfileView from './views/profile';
 import './management.css';
 import './features.css';
+import './dashboard-polish.css';
+import {LiquidButton} from '@/components/ui/liquid-glass-button';
+import AgentDock from '@/components/ui/agent-dock';
 
 export type { Tab } from '@/lib/access';
 import { tabsFor, statsCampuses, navigationFor, type Tab } from '@/lib/access';
@@ -117,11 +120,12 @@ export default function Dashboard() {
       <div className="header-actions">
         <ThemeToggle />
         {profile && <button className="user-chip" onClick={() => jump('profile')} title="My profile"><span className="user-name">{profile.full_name}</span><span className="role-badge">{ROLE_LABELS[profile.role]}</span></button>}
-        <button className="quiet-link" onClick={logout} aria-label="Log out" title="Log out"><LogOut size={18} /></button>
+        <LiquidButton size="sm" className="quiet-link" onClick={logout} aria-label="Log out" title="Log out"><LogOut size={18} /></LiquidButton>
       </div>
     </header>
     <FloatingNav items={navigation.primary.map(item => ({ ...item, icon: navIcons[item.id] }))} active={navigation.active} unread={unread} onSelect={next => jump(next)} />
     <main className="workspace">
+      <div className="workspace-transition" key={tab}>
       <div className="breadcrumb">Kharis On Campus Management<span>/ {tabs.find((t) => t.id === tab)?.label}</span></div>
       {navigation.secondary.length > 1 && <nav className="section-navigation" aria-label="Section navigation">{navigation.secondary.map(item => <button type="button" key={item.id} aria-current={tab === item.id ? 'page' : undefined} onClick={() => jump(item.id)}>{item.label}</button>)}</nav>}
       {error && <div className="management-alert" role="alert">{error}</div>}
@@ -156,7 +160,9 @@ export default function Dashboard() {
           {tab === 'quarters' && profile.role !== 'campus' && <QuarterView campuses={visibleCampuses} />}
           {tab === 'profile' && <ProfileView profile={profile} onChange={load} />}
         </>}
+      </div>
       <footer className="page-footer"><span>© Kharis On Campus</span></footer>
     </main>
+    {profile?.status === 'active' && <AgentDock placement="dashboard" />}
   </div>;
 }
