@@ -41,3 +41,8 @@ Dashboard action buttons share the landing liquid-glass treatment. Existing butt
 ## Main brand mark
 
 Use the supplied flyer’s yellow Kharis On Campus lettering as the shared logo, extracted on transparency in `public/koc-yellow-logo.png`. `BrandLogo` supplies the same accessible mark on the landing header, dashboard navbar and all authentication screens; the browser icon uses the mark too. The shared mark is black lettering with a white outline in light mode and retains its yellow lettering and purple edge in dark mode. Midnight dark mode uses near-black #050609 backgrounds, #0e1118 surfaces, cool slate dividers and pale text; semantic tokens apply this consistently to the landing page, dashboard and authentication screens.
+
+
+## Material watermark
+
+Protected reading pages use a single subtle KOC logo in the bottom-right corner. Do not overlay repeated names, emails or timestamps over teaching content. The logo is composited on the server; private access checks and audit records remain in place.

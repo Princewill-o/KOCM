@@ -27,6 +27,13 @@ describe('protected reader', () => {
     fireEvent.click(screen.getByText('Resume reading'));
     await waitFor(() => expect(readPage).toHaveBeenCalledTimes(2));
   });
+  it('does not add repeated personal text over the server reading copy', async () => {
+    mount();
+    await waitFor(() => expect(screen.getByLabelText('Page 1 of Teaching').getAttribute('width')).toBe('100'));
+    const context = (screen.getByLabelText('Page 1 of Teaching') as HTMLCanvasElement).getContext('2d');
+    expect(context?.drawImage).toHaveBeenCalledOnce();
+    expect(context?.fillText).not.toHaveBeenCalled();
+  });
   it('flushes when print or save shortcuts are delivered', async () => {
     mount();
     await waitFor(() => expect(screen.getByLabelText('Page 1 of Teaching').getAttribute('width')).toBe('100'));

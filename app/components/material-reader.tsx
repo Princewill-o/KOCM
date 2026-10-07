@@ -25,7 +25,7 @@ async function decode(blob: Blob, signal: AbortSignal): Promise<{ image: CanvasI
   } finally { URL.revokeObjectURL(url); }
 }
 
-export default function Reader({ material, profile, onClose }: { material: Material; profile: Profile; onClose: () => void }) {
+export default function Reader({ material, onClose }: { material: Material; profile: Profile; onClose: () => void }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const request = useRef<AbortController | null>(null);
   const generation = useRef(0);
@@ -84,20 +84,17 @@ export default function Reader({ material, profile, onClose }: { material: Mater
         if (!context) throw new Error('Your browser cannot display protected pages.');
         canvas.current.width = decoded.width; canvas.current.height = decoded.height;
         context.drawImage(decoded.image, 0, 0);
-        context.save(); context.globalAlpha = 0.18; context.fillStyle = '#634514'; context.font = `${Math.max(14, decoded.width / 55)}px sans-serif`;
-        const identity = `${profile.full_name} · ${profile.email} · ${new Date().toISOString()}`;
-        for (let y = 70; y < decoded.height; y += 160) context.fillText(identity, 20, y, decoded.width - 40);
-        context.restore(); session.current = result.sessionId; setPages(result.pageCount);
+        session.current = result.sessionId; setPages(result.pageCount);
       } catch (cause) { if (!controller.signal.aborted && current === generation.current) { flush(); session.current = undefined; setError(friendly(cause)); setLoading(false); } }
       finally { decoded?.close(); if (!controller.signal.aborted && current === generation.current) setLoading(false); }
     })();
     return flush;
-  }, [material.id, material.protected_ready, page, paused, profile.full_name, profile.email]);
+  }, [material.id, material.protected_ready, page, paused]);
   const changePage = (value: number) => { flush(); setLoading(true); setPage(value); };
   const unavailable = !material.protected_ready;
   return <section className="panel padded feature-reader" onContextMenu={e => e.preventDefault()} onCopy={e => e.preventDefault()} onDragStart={e => e.preventDefault()}>
     <div className="feature-reader-controls"><h2>{material.title}</h2><button className="button" onClick={() => { flush(); session.current = undefined; onClose(); }}>Close reader</button></div>
-    <p className="small muted">Personalised reading copy. Copying, saving and printing are restricted. Screenshots cannot be reliably blocked.</p>
+    <p className="small muted">Protected reading copy. Copying, saving and printing are restricted. Screenshots cannot be reliably blocked.</p>
     {error && <p role="alert" className="form-error">{error}</p>}
     <div className="protected-reader-page"><canvas ref={canvas} aria-label={`Page ${page} of ${material.title}`} />
       {(paused || unavailable || loading || error) && <div className="protected-reader-mask">
