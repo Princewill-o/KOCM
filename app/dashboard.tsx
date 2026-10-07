@@ -11,6 +11,7 @@ import Overview from './views/overview';
 import CampusView from './views/campus-view';
 import CampusNetwork from './views/campus-network';
 import ReportForm from './views/report-form';
+import ClusterReportForm from './views/cluster-report-form';
 import Accounts from './views/accounts';
 import ProfileView from './views/profile';
 import './management.css';
@@ -151,7 +152,8 @@ export default function Dashboard() {
           {tab === 'overview' && allAccess && <Overview season={season} profile={profile} jump={jump} />}
           {tab === 'campus' && !visibleCampuses.length && <section className="panel padded"><h1>No campuses assigned yet</h1><p>An administrator must assign your campus or cluster before its statistics appear.</p></section>}
           {tab === 'campus' && !!visibleCampuses.length && <CampusView key={campusId} season={season} profile={profile} campuses={visibleCampuses} campusId={campusId} setCampusId={setCampusId} jump={jump} />}
-          {tab === 'enter' && <ReportForm season={season} profile={profile} campuses={visibleCampuses} campusId={campusId} setCampusId={setCampusId} initialWeek={weekEnding} />}
+          {tab === 'enter' && profile.role === 'cluster' && <ClusterReportForm profile={profile} campuses={visibleCampuses} />}
+          {tab === 'enter' && profile.role !== 'cluster' && <ReportForm season={season} profile={profile} campuses={visibleCampuses} campusId={campusId} setCampusId={setCampusId} initialWeek={weekEnding} />}
           {tab === 'map' && profile.role === 'admin' && <CampusNetwork jump={jump} />}
           {tab === 'accounts' && profile.role === 'admin' && <Accounts profile={profile} campuses={campuses} />}
           {tab === 'grades' && <Grades profile={profile} campuses={visibleCampuses} />}
