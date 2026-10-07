@@ -30,8 +30,8 @@ export default function Home() {
     </section>
 
     <section className="landing-fellowship" aria-labelledby="landing-fellowship-title">
-      <div className="landing-fellowship-copy"><p className="landing-eyebrow">COME AND FELLOWSHIP</p><h2 id="landing-fellowship-title">There is room<br />for you here.</h2><p>Connect with your campus fellowship to find out when and where to meet, and how to get involved.</p><p className="landing-meeting-note">Our flyer invites students to Tuesday fellowship. Confirm the time and venue with your campus team.</p><Link href="/signup" className="landing-text-link">Connect with the KOC team <ArrowRight size={17} /></Link></div>
-      <figure className="landing-flyer"><img src="/community/fellowship-tuesday.jpg" alt="Kharis On Campus flyer: Fellowship with us every Tuesday. The venue is not specified." width="900" height="1600" loading="lazy" /></figure>
+      <div className="landing-fellowship-copy"><p className="landing-eyebrow">COME AND FELLOWSHIP</p><h2 id="landing-fellowship-title">There is room<br />for you here.</h2><p>Connect with your campus fellowship to find out when and where to meet, and how to get involved.</p><p className="landing-meeting-note">Tuesday fellowship. Confirm the time and venue with your campus team.</p><Link href="/signup" className="landing-text-link">Connect with the KOC team <ArrowRight size={17} /></Link></div>
+      <figure className="landing-flyer"><img src="/community/fellowship-lettering.png" alt="Kharis On Campus — Fellowship with us every Tuesday!" width="1672" height="941" loading="lazy" /></figure>
     </section>
 
     <section id="get-connected" className="landing-choices" aria-labelledby="landing-connect-title">
