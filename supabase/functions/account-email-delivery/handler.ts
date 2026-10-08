@@ -39,6 +39,19 @@ export function createAccountEmailHandler(deps: AccountEmailDependencies) {
         if (auth === 'unauthorized') return json(401,{error:'Please log in again.'});
         if (auth !== 'admin') return json(403,{error:'An active administrator account is required.'});
       }
+      if(request.body){
+        let body:Record<string,unknown>;
+        try{
+          const reader=request.body.getReader(),chunks:Uint8Array[]=[];let size=0;
+          while(true){const {done,value}=await reader.read();if(done)break;size+=value.byteLength;if(size>2048){await reader.cancel();throw new Error();}chunks.push(value);}
+          const bytes=new Uint8Array(size);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.length;}
+          body=size?JSON.parse(new TextDecoder().decode(bytes)):{};
+          if(!body||typeof body!=='object'||Array.isArray(body))throw new Error();
+        }catch{return json(400,{error:'Invalid account email request.'});}
+        if(body.action==='status')return json(200,{configured:deps.configured()});
+        // Reject misspelled status actions rather than accidentally sending mail.
+        if(body.action!==undefined)return json(400,{error:'Unsupported account email action.'});
+      }
       if (!deps.configured()) return json(503,{error:'Account email delivery is not configured. Configure the SMTP settings; queued emails have not been sent.'});
       // No caller-controlled recipients or body: the database owns the queued decision.
       const messages = (await deps.claim(3)).slice(0,3);

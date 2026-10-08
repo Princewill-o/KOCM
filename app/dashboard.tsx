@@ -160,7 +160,7 @@ export default function Dashboard() {
           {tab === 'overview' && allAccess && <Overview season={season} profile={profile} jump={jump} />}
           {tab === 'campus' && !visibleCampuses.length && <section className="panel padded"><h1>No campuses assigned yet</h1><p>An administrator must assign your campus or cluster before its statistics appear.</p></section>}
           {tab === 'campus' && !!visibleCampuses.length && <CampusView key={campusId} season={season} profile={profile} campuses={visibleCampuses} campusId={campusId} setCampusId={setCampusId} jump={jump} />}
-          {tab === 'enter' && profile.role === 'cluster' && <><ClusterReportForm profile={profile} campuses={visibleCampuses} /><ClusterReportRecords campuses={visibleCampuses} /></>}
+          {tab === 'enter' && profile.role === 'cluster' && <><ClusterReportForm key={weekEnding} profile={profile} campuses={visibleCampuses} season={season} initialWeek={weekEnding || undefined} /><ClusterReportRecords campuses={visibleCampuses} /></>}
           {tab === 'enter' && profile.role !== 'cluster' && profile.role !== 'campus' && <ClusterReportRecords campuses={visibleCampuses} />}
           {tab === 'enter' && profile.role !== 'cluster' && profile.role !== 'campus' && <ReportForm season={season} profile={profile} campuses={visibleCampuses} campusId={campusId} setCampusId={setCampusId} initialWeek={weekEnding} />}
           {tab === 'enter' && profile.role === 'campus' && <CampusWeeklyForm season={season} profile={profile} campuses={visibleCampuses} campusId={campusId} setCampusId={setCampusId} initialWeek={weekEnding} />}
@@ -170,7 +170,7 @@ export default function Dashboard() {
           {tab === 'grades' && <Grades profile={profile} campuses={visibleCampuses} />}
           {tab === 'contacts' && <Contacts profile={profile} campuses={visibleCampuses} />}
           {tab === 'materials' && <Materials profile={profile} campuses={visibleCampuses} />}
-          {tab === 'notifications' && <Notifications onOpenReports={() => jump('enter')} onOpenApplication={() => jump('accounts')} />}
+          {tab === 'notifications' && <Notifications onOpenReports={() => jump('enter')} onOpenApplication={() => jump('accounts')} onOpenReporting={(scope,scopeId,week)=>jump('enter',{...(scope==='campus' && scopeId ? {campusId:scopeId}:{}),...(week?{weekEnding:week}:{})})} />}
           {tab === 'quarters' && profile.role !== 'campus' && <QuarterView campuses={visibleCampuses} />}
           {tab === 'profile' && <ProfileView profile={profile} onChange={load} />}
         </>}

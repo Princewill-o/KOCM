@@ -1,0 +1,36 @@
+begin;
+do $$
+declare campus uuid; lead uuid:=gen_random_uuid(); admin_user uuid:=gen_random_uuid(); cluster_lead uuid:=gen_random_uuid(); cluster uuid; week date:='2026-10-09'; queued integer; job private.account_email_deliveries;
+begin
+ select id into campus from public.campuses where is_active and cluster_id is not null limit 1;
+ insert into auth.users(id,email,raw_user_meta_data,email_confirmed_at) values(lead,'reminder-lead@koc-fixture.org',jsonb_build_object('full_name','Reminder Lead','campus_id',campus),now());update public.profiles set status='active' where id=lead;
+ insert into auth.users(id,email,raw_user_meta_data,raw_app_meta_data,email_confirmed_at) values(admin_user,'reminder-admin@koc-fixture.org','{"full_name":"Reminder Admin"}','{"koc_role":"admin"}',now());
+ select cluster_id into cluster from public.campuses where id=campus;
+ insert into auth.users(id,email,raw_user_meta_data,email_confirmed_at) values(cluster_lead,cluster_lead::text||'@accounts.kocm.invalid','{"full_name":"Cluster Reminder Lead"}',now());
+ update public.profiles set role='cluster',status='active',cluster_id=cluster where id=cluster_lead;
+ queued:=private.queue_weekly_report_alerts('2026-10-09 19:00:00+00');
+ if not exists(select 1 from public.notifications where recipient_id=lead and kind='report_reminder' and reporting_week=week) then raise exception 'Friday20UK reminder not created';end if;
+ if not exists(select 1 from private.account_email_deliveries where user_id=lead and kind='report_reminder') then raise exception 'Verified lead email not queued';end if;
+ if not exists(select 1 from public.notifications where recipient_id=cluster_lead and kind='report_reminder' and reporting_scope='cluster') then raise exception 'Cluster reminder missing';end if;
+ if exists(select 1 from private.account_email_deliveries where user_id=cluster_lead) then raise exception 'Internal alias email queued';end if;
+ select * into job from private.account_email_deliveries where user_id=lead and kind='report_reminder';
+ if private.report_email_current(job,'2026-10-09 21:00:00+00') then raise exception 'After-deadline reminder still deliverable';end if;
+ if private.queue_weekly_report_alerts('2026-10-08 19:00:00+00')<>0 then raise exception 'Thursday reminder queued';end if;
+ if private.queue_weekly_report_alerts('2026-10-09 19:15:00+00')<>0 then raise exception 'Reminder repeated';end if;
+ perform private.queue_weekly_report_alerts('2026-10-09 22:00:00+00');
+ if not exists(select 1 from public.notifications where recipient_id=admin_user and kind='missing_report' and campus_id=campus and reporting_week=week) then raise exception 'Admin missing alert not created';end if;
+ insert into public.reports(campus_id,season_id,week_ending,attendance,prayer_minutes,evangelism_minutes,outreach_outings,submitted_by,updated_by) select campus,(select id from public.seasons where is_current),week,1,1,1,1,lead,lead;
+ insert into public.cluster_reports(request_id,cluster_id,scope,answers,submitted_by,submitter_name,submitter_email,week_ending,season_id) select gen_random_uuid(),cluster,'cluster','{}',cluster_lead,'Cluster Reminder Lead',cluster_lead::text||'@accounts.kocm.invalid',week,(select id from public.seasons where is_current);
+ if exists(select 1 from public.notifications where recipient_id in (lead,cluster_lead) and kind in ('report_reminder','missing_report') and resolved_at is null) then raise exception 'Submitted alerts not resolved';end if;
+ perform public.claim_account_emails();
+ if exists(select 1 from private.account_email_deliveries where user_id=lead and kind in ('report_reminder','missing_report') and status in ('pending','sending','failed')) then raise exception 'Obsolete reminder not cancelled';end if;
+ perform set_config('request.jwt.claim.sub',cluster_lead::text,true);
+ begin perform public.submit_cluster_report('{}',gen_random_uuid(),date '2099-01-02');raise exception 'Future week accepted';exception when sqlstate '22023' then null;end;
+ perform private.queue_weekly_report_alerts('2026-12-04 20:00:00+00');
+ if not exists(select 1 from public.notifications where recipient_id=lead and reporting_week=date '2026-12-04' and kind='report_reminder') then raise exception 'GMT 20UK reminder missing';end if;
+ update public.campuses set is_active=false where id=campus;
+ if exists(select 1 from public.notifications where campus_id=campus and kind in ('report_reminder','missing_report') and resolved_at is null) then raise exception 'Inactive campus alert not resolved';end if;
+ if private.is_real_reporting_email('dummy@example.com') or private.is_real_reporting_email('dummy@sub.example.net') or private.is_real_reporting_email('dummy@campus.invalid') then raise exception 'Reserved address allowed';end if;
+ if has_function_privilege('authenticated','private.queue_weekly_report_alerts(timestamptz)','execute') then raise exception 'Browser can queue alerts';end if;
+end $$;
+rollback;

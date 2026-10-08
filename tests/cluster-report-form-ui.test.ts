@@ -10,6 +10,17 @@ beforeEach(() => api.submit.mockReset());
 afterEach(cleanup);
 const profile = { full_name: 'Test Lead', cluster_id: 'cluster-a', role: 'cluster' } as Profile;
 const campuses = [{ id: 'own-campus', name: 'Own University', region: 'London', cluster_id: 'cluster-a' }, { id: 'other-campus', name: 'Other University', region: 'North', cluster_id: 'cluster-b' }];
+it('reviews and submits the chosen reporting week',async()=>{
+ api.submit.mockResolvedValue({id:'week-report',created_at:'2026-10-08T10:00:00Z'});
+ render(createElement(ClusterReportForm,{profile,campuses,initialWeek:'2026-09-25',season:{id:'2026-2027',name:'2026–2027',start_date:'2026-09-18',end_date:'2027-05-28',deadline_hour:22,time_zone:'Europe/London'}}));
+ expect((screen.getByLabelText('Reporting week *') as unknown as HTMLSelectElement).value).toBe('2026-09-25');
+ fireEvent.click(screen.getByLabelText('Incident'));
+ fireEvent.change(screen.getByLabelText('Do you want to report any other issues regarding KOC? *'),{target:{value:'no'}});
+ fireEvent.click(screen.getByRole('button',{name:'Review answers'}));
+ fireEvent.click(screen.getByRole('button',{name:'Submit report'}));
+ await screen.findByText('Report submitted');
+ expect(api.submit.mock.calls[0][2]).toBe('2026-09-25');
+});
 it('shows only assigned campuses and does not send answers until explicit submission', () => {
   const { container } = render(createElement(ClusterReportForm, { profile, campuses }));
   expect(screen.queryByRole('option', { name: 'Other University' })).toBeNull();

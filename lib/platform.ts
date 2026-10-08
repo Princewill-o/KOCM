@@ -17,7 +17,7 @@ export async function listCampusLeadProfiles(): Promise<CampusLeadProfile[]> {
 export type Cluster = { id: string; name: string; lead_name: string; is_active: boolean };
 export type Grade = { id: string; campus_id: string; student_name: string; course: string; assessment: string; percentage: number; assessment_date: string; notes: string; submitted_by: string; created_at: string };
 export type Contact = { id: string; campus_id: string; full_name: string; phone: string; fellowship_attended: boolean; branch_attended: boolean; notes: string; is_active: boolean; created_by: string; created_at: string; updated_at: string };
-export type Notification = { id: string; recipient_id: string; kind: string; title: string; message: string; campus_id: string | null; report_id: string | null; grade_id: string | null; created_at: string; read_at: string | null };
+export type Notification = { id: string; recipient_id: string; kind: string; title: string; message: string; campus_id: string | null; report_id: string | null; grade_id: string | null; created_at: string; read_at: string | null; resolved_at?:string|null; reporting_week?:string|null; reporting_scope?:string|null; reporting_scope_id?:string|null };
 export type Material = { page_count: number; protected_ready: boolean; id: string; title: string; description: string; object_path: string; campus_id: string | null; uploaded_by: string; is_active: boolean; created_at: string; updated_at: string };
 function checked<T>(result: { data: unknown; error: unknown }): T {
   if (result.error) throw new Error(friendly(result.error));

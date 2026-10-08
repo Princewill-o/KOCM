@@ -6,7 +6,7 @@ import {
   acknowledgeNotification,
   type Notification,
 } from "@/lib/platform";
-export default function Notifications({onOpenReports,onOpenApplication}:{onOpenReports?:()=>void;onOpenApplication?:(campusId:string|null)=>void} = {}) {
+export default function Notifications({onOpenReports,onOpenApplication,onOpenReporting}:{onOpenReports?:()=>void;onOpenApplication?:(campusId:string|null)=>void;onOpenReporting?:(scope:string,scopeId:string|null,week:string|null)=>void}) {
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<Notification[]>([]),
     [error, setError] = useState(""),
@@ -38,7 +38,7 @@ export default function Notifications({onOpenReports,onOpenApplication}:{onOpenR
           <div className="eyebrow">LEADERSHIP INBOX</div>
           <h1>Notifications</h1>
           <p>
-            Review lead applications, cluster submissions, late weekly reports and grades requiring support. Acknowledge
+            Review report reminders, missing submissions, lead applications, cluster submissions and grades requiring support. Acknowledge
             each alert after reading.
           </p>
         </div>
@@ -60,10 +60,11 @@ export default function Notifications({onOpenReports,onOpenApplication}:{onOpenR
           >
             <div>
               <span className="eyebrow">
-                {r.kind === "lead_application" ? "LEAD APPLICATION" : r.kind === "low_grade" ? "ACADEMIC SUPPORT" : r.kind === "cluster_report" ? "CLUSTER REPORT" : "LATE REPORT"}
+                {r.kind === "lead_application" ? "LEAD APPLICATION" : r.kind === "low_grade" ? "ACADEMIC SUPPORT" : r.kind === "cluster_report" ? "CLUSTER REPORT" : r.kind === "report_reminder" ? "REPORT REMINDER" : r.kind === "missing_report" ? "MISSING REPORT" : "LATE REPORT"}
               </span>
-              <h2>{r.title}</h2>
+              <h2>{r.title}</h2>{r.resolved_at && <p className="success-message">Resolved — this report is no longer outstanding.</p>}
               <p>{r.message}</p>{r.kind === "lead_application" && <button type="button" className="text-button" onClick={()=>onOpenApplication?.(r.campus_id)}>Review application</button>}{r.kind === "cluster_report" && <button type="button" className="text-button" onClick={onOpenReports}>Read cluster reports</button>}
+              {onOpenReporting && !r.resolved_at && (r.kind === "report_reminder" || r.kind === "missing_report") && <button type="button" className="text-button" onClick={()=>onOpenReporting(r.reporting_scope??"campus",r.reporting_scope_id??r.campus_id,r.reporting_week??null)}>Open weekly report</button>}
               <time className="small muted">
                 {new Date(r.created_at).toLocaleString("en-GB", {
                   timeZone: "Europe/London",

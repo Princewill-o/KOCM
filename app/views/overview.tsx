@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ComponentProps } from "react";
 import {
   Users,
   Clock3,
@@ -30,6 +30,7 @@ import {
 import type { demoData } from "@/lib/demo";
 import type { Jump } from "../dashboard";
 import { completionRows, downloadWorkbook } from "@/lib/analytics";
+import AdminAcademicOverview from "./admin-academic-overview";
 import { ActivityChart, CompletionChart } from "./analytics-charts";
 
 type Metric =
@@ -45,7 +46,7 @@ const metricLabels: Record<Metric, string> = {
 };
 type SortKey = "campus_name" | "region" | Metric | "reports";
 
-export default function Overview({
+function CampusOverview({
   season,
   profile,
   jump,
@@ -532,3 +533,5 @@ export default function Overview({
     </>
   );
 }
+
+export default function Overview(props:ComponentProps<typeof CampusOverview>){return props.profile.role==='admin'&&props.profile.status==='active'&&!props.demo?<AdminAcademicOverview season={props.season} profile={props.profile} jump={props.jump}/>:<CampusOverview {...props}/>;}

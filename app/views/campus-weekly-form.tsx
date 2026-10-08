@@ -1,4 +1,5 @@
 'use client';
+import './weekly-forms.css';
 import {useState} from 'react';
 import type {Campus,Profile} from '@/lib/koc';
 import {buildWeeks,deadlineFor,formatDate,type Season} from '@/lib/reporting';
@@ -15,7 +16,7 @@ export default function CampusWeeklyForm({season,profile,campuses,initialWeek}:P
  async function submit(){if(!answers||!requestId||busy)return;setBusy(true);setError('');try{await submitCampusWeeklyFeedback(week,answers,requestId);setSaved(true);setAnswers(null);}catch(reason){setError(reason instanceof Error?reason.message:'Submission failed. Please retry.');}finally{setBusy(false);}}
  if(profile.role!=='campus'||profile.status!=='active')return <div className="panel">An approved campus lead account is required.</div>;
  if(!campus||campus.is_active===false)return <div className="panel">Your assigned campus is unavailable for reporting. Contact an administrator.</div>;
- return <section><div className="page-heading"><div><h1>Campus weekly feedback</h1><p>Report fellowship, prayer, evangelism and church activity for your campus.</p></div></div>
+ return <section className="campus-weekly-form"><div className="page-heading"><div><h1>Campus weekly feedback</h1><p>Report fellowship, prayer, evangelism and church activity for your campus.</p></div></div>
  {saved&&<div role="status" className="panel">Your campus weekly feedback was submitted successfully.</div>}
  {error&&<div role="alert" className="panel">{error}</div>}
  {answers?<div className="panel"><h2>Review your feedback</h2><p>{profile.full_name} · {campus.name} · Week ending {formatDate(week)}</p><p>Submission status is determined when the platform receives the report.</p>{campusWeeklySections.map(section=><div key={section.title}><h3>{section.title}</h3><dl>{section.fields.filter(([key])=>key!=='tonguesRecipients'||answers.holyGhostBaptism==='yes').filter(([key])=>key!=='evangelismZeroReason'||answers.evangelismMinutes===0).map(([key,label])=><div key={key}><dt>{label}</dt><dd>{String(answers[key]??'None')}</dd></div>)}</dl></div>)}{answers.lateReason&&<p>Late reason: {answers.lateReason}</p>}<div className="button-row"><button type="button" className="button" disabled={busy} onClick={()=>setAnswers(null)}>Edit answers</button><button type="button" className="button button-yellow" disabled={busy} onClick={submit}>{busy?'Submitting…':'Submit feedback'}</button></div></div>:

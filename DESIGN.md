@@ -55,3 +55,5 @@ Username is the primary registration field; email remains optional. The profile 
 
 
 Lead applications use a labelled two-column desktop layout and a single-column phone form, with edit, review and confirmed-success stages. Existing university selection includes lifecycle text; starting a new university reveals name/city fields. Admin application records remain private and appear alongside campus leadership information. Status changes are explicit saves, separate from account approval. Map pins use a shared projection with the UK boundary, remain at real coordinates and support regional/selected-campus zoom.
+
+The admin main overview uses academic-year and comparison controls, a mid-year/full-season toggle, aligned trends and reporting coverage. Keep historical PDF reference figures visually separate from live submissions and identify their source and limited date coverage. Campus and cluster weekly forms use generously spaced neutral panels, clear section legends, two-column desktop fields and single-column mobile fields. Styling must preserve all questions, conditional fields and review-before-submit behavior.

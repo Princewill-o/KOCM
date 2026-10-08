@@ -1,0 +1,32 @@
+.campus-weekly-form,.cluster-weekly-form{max-width:900px;margin-inline:auto}
+.campus-weekly-form .page-heading{margin-bottom:28px}
+.campus-weekly-form .page-heading h1{font-size:clamp(26px,3vw,34px);letter-spacing:-.8px}
+.campus-weekly-form form{display:grid;gap:24px}
+.campus-weekly-form .panel{padding:clamp(20px,3vw,32px);border-radius:16px;margin:0;min-width:0}
+.campus-weekly-form fieldset.panel{position:relative;padding-top:24px}
+.campus-weekly-form legend{padding-inline:10px;font-size:17px;font-weight:600;letter-spacing:-.3px}
+.campus-weekly-form .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+.campus-weekly-form .field{display:flex;flex-direction:column;gap:9px;min-width:0}
+.campus-weekly-form label,.cluster-weekly-form label{display:block;font-size:13px;font-weight:600;line-height:1.55;margin-bottom:9px}
+.campus-weekly-form .input,.cluster-weekly-form .input{width:100%;min-height:46px;border-radius:9px;background:var(--background);border:1px solid var(--border);padding:11px 13px;margin:0;box-shadow:none;color:var(--foreground);font-size:15px}
+.campus-weekly-form .input:focus-visible,.cluster-weekly-form .input:focus-visible{outline:2px solid var(--yellow);outline-offset:3px}
+.campus-weekly-form .input[readonly]{color:var(--muted-foreground);background:var(--muted)}
+.campus-weekly-form .panel>label{margin-top:18px}
+.campus-weekly-form .panel>label:first-of-type{margin-top:0}
+.campus-weekly-form .panel>label .input{margin-top:8px}
+.campus-weekly-form .panel>select{margin-top:0}
+.campus-weekly-form .panel>p,.cluster-weekly-form p{font-size:13px;line-height:1.65;color:var(--muted-foreground)}
+.campus-weekly-form [role=alert],.cluster-weekly-form [role=alert]{color:var(--destructive);font-size:13px}
+.campus-weekly-form [role=status]{margin-bottom:24px;border-left:3px solid var(--yellow)}
+.campus-weekly-form form>.panel:last-child .button{margin-top:22px}
+.campus-weekly-form .button-row{margin-top:28px;gap:12px}
+.campus-weekly-form dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:18px 0 28px}
+.campus-weekly-form dl>div{border-bottom:1px solid var(--border);padding-bottom:13px}
+.campus-weekly-form dt{font-size:12px;color:var(--muted-foreground);line-height:1.6}
+.campus-weekly-form dd{margin:6px 0 0;font-size:15px;white-space:pre-wrap;overflow-wrap:anywhere}
+.cluster-weekly-form h2{font-size:28px;letter-spacing:-.7px;margin-top:0}
+.cluster-weekly-form fieldset{background:var(--background)}
+.cluster-weekly-form legend{font-size:16px;font-weight:600;padding-inline:8px}
+.cluster-weekly-form input[type=checkbox]{width:18px;height:18px;accent-color:var(--yellow)}
+.cluster-weekly-form dd{padding-top:5px}
+@media(max-width:600px){.campus-weekly-form .form-grid,.campus-weekly-form dl{grid-template-columns:1fr}.campus-weekly-form form{gap:20px}.campus-weekly-form .input,.cluster-weekly-form .input{font-size:16px}.campus-weekly-form .panel{padding:20px}.campus-weekly-form .button-row{flex-wrap:wrap}}

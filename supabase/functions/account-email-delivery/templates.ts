@@ -18,6 +18,15 @@ export function renderAccountEmail(email:TemplateEmail):{subject:string;text:str
     const reason=email.reason ? `Reason: ${email.reason}` : '';
     return {subject:'Your KOC account application',text:`${greeting}\n\n${intro}${reason?`\n\n${reason}`:''}\n\n${guidance}\n\nhttps://kocm.vercel.app/login\n\nKOC platform team`,html:shell('Your account application',intro,paragraph(greeting)+paragraph(intro)+(reason?paragraph(reason):'')+paragraph(guidance))};
   }
+  if(email.kind==='report_reminder'||email.kind==='missing_report'){
+    const payload=email.payload as {scope?:unknown;scopeName?:unknown;weekEnding?:unknown}|undefined;
+    if(!payload||!['campus','cluster'].includes(String(payload.scope))||typeof payload.scopeName!=='string'||!payload.scopeName.trim()||payload.scopeName.length>200||typeof payload.weekEnding!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(payload.weekEnding))throw new Error('Invalid reminder payload.');
+    const date=ukDate(payload.weekEnding),missing=email.kind==='missing_report';
+    const title=missing?'Your weekly report is missing':'Weekly report reminder';
+    const intro=`Your ${payload.scope} report for ${payload.scopeName}, week ending Friday ${date}, ${missing?'has not been submitted':'is due at 22:00 UK time on Friday'}.`;
+    const guidance=missing?'Please submit as soon as possible. Missing means not submitted, not zero attendance or activity. Leadership has been notified.':'Please sign in and submit your weekly report before the 22:00 UK time deadline. If you have already submitted, check that you selected the correct reporting week.';
+    return {subject:`${title} — ${date}`,text:`${greeting}\n\n${intro}\n\n${guidance}\n\nhttps://kocm.vercel.app/dashboard\n\nKOC platform team`,html:shell(title,intro,paragraph(greeting)+paragraph(intro)+paragraph(guidance))};
+  }
   if (email.kind !== 'weekly_digest') throw new Error('Unsupported email kind.');
   const payload=email.payload as WeeklyDigestPayload | undefined;
   if (!payload || !/^\d{4}-\d{2}-\d{2}$/.test(payload.weekEnding) || !Array.isArray(payload.missing) || !payload.missing.every(item=>typeof item==='string') || !Array.isArray(payload.late) || !payload.late.every(item=>typeof item?.campus==='string' && typeof item?.submittedAt==='string')) throw new Error('Invalid digest payload.');

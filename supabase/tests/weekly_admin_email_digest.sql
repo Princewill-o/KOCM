@@ -1,9 +1,9 @@
 begin;
 create function pg_temp.assert_true(value boolean,message text) returns void language plpgsql as $$ begin if value is distinct from true then raise exception 'Assertion failed: %',message; end if; end $$;
 insert into auth.users(id,email,raw_app_meta_data,email_confirmed_at) values
- ('80000000-0000-0000-0000-000000000001','verified-admin@example.org','{"koc_role":"admin"}',now()),
- ('80000000-0000-0000-0000-000000000002','pending-admin@example.org','{"koc_role":"admin"}',null),
- ('80000000-0000-0000-0000-000000000003','campus-digest@example.org','{}',now());
+ ('80000000-0000-0000-0000-000000000001','verified-admin@koc-fixture.org','{"koc_role":"admin"}',now()),
+ ('80000000-0000-0000-0000-000000000002','pending-admin@koc-fixture.org','{"koc_role":"admin"}',null),
+ ('80000000-0000-0000-0000-000000000003','campus-digest@koc-fixture.org','{}',now());
 update public.profiles set role='campus',status='active',campus_id=(select id from public.campuses where name='Brunel') where id='80000000-0000-0000-0000-000000000003';
 select pg_temp.assert_true(private.queue_weekly_admin_digest('2026-10-23 21:59+00')=0,'not sent before23BST');
 insert into public.reports(campus_id,season_id,week_ending,attendance,prayer_minutes,evangelism_minutes,outreach_outings,submitted_by,updated_by)

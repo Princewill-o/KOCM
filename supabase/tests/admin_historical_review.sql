@@ -1,0 +1,17 @@
+begin;
+insert into auth.users(id,email,raw_user_meta_data,raw_app_meta_data,email_confirmed_at) values('70000000-0000-4000-8000-000000000001','history-admin@koc-fixture.org','{"full_name":"History Admin"}','{"koc_role":"admin"}',now());
+insert into auth.users(id,email,raw_user_meta_data) select '70000000-0000-4000-8000-000000000002','history-campus@koc-fixture.org',jsonb_build_object('full_name','History Campus','campus_id',id) from public.campuses where is_active limit 1;
+update public.profiles set status='active' where id='70000000-0000-4000-8000-000000000002';
+insert into public.admin_historical_reviews(id,source_name,payload) values('test-review','Synthetic fixture','{"rows":[],"overall":[],"attendanceTrend":[]}');
+select set_config('request.jwt.claim.sub','70000000-0000-4000-8000-000000000001',true);
+set local role authenticated;
+do $$ begin if (select count(*) from public.admin_historical_reviews where id='test-review')<>1 then raise exception 'Admin cannot read review';end if;end $$;
+reset role;
+select set_config('request.jwt.claim.sub','70000000-0000-4000-8000-000000000002',true);
+set local role authenticated;
+do $$ begin if exists(select 1 from public.admin_historical_reviews) then raise exception 'Campus can read private review';end if;end $$;
+reset role;
+set local role anon;
+do $$ begin begin perform * from public.admin_historical_reviews;raise exception 'Anonymous review exposed';exception when insufficient_privilege then null;end;end $$;
+reset role;
+rollback;

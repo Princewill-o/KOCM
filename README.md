@@ -2,6 +2,8 @@
 
 Weekly campus reporting for Kharis On Campus (KOC): attendance, prayer time, evangelism time and outreach outings for every university, with light/dark themes.
 
+Administrators' main overview supports persisted academic years, mid-year reporting through January 31 and full-season reporting, aligned trends, campus/region totals and submitted-week averages, and all numeric campus-feedback outcomes. Historical 2023/2024 figures transcribed from the supplied review PDF appear in a separate reference section; they are not fabricated weekly submissions or academic-year totals. Inactive and in-process campuses remain outside live activity totals. Unknown values remain unknown.
+
 ## How it works
 
 - **Frontend:** Next.js (vinext on Vite), React 19, shadcn/ui.
