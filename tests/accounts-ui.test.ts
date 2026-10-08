@@ -2,6 +2,7 @@
 import { createElement } from 'react';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+vi.mock('../lib/lead-applications',()=>({listLeadApplications:async()=>[]}));
 const mocks = vi.hoisted(() => ({ list:vi.fn(),save:vi.fn(),email:vi.fn(),deliveries:vi.fn(),deliver:vi.fn() }));
 vi.mock('../lib/koc', () => ({listProfiles:mocks.list,adminSetEmail:mocks.email,friendly:(e:Error) => e.message,ROLE_LABELS:{admin:'Administrator',editor:'Stats editor',campus:'Campus rep',cluster:'Cluster lead'}}));
 vi.mock('../lib/platform', () => ({listClusters:() => Promise.resolve([{id:'north',name:'North',lead_name:'Naa'}])}));

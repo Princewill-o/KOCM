@@ -4,14 +4,20 @@ import {ArrowRight,MapPin,Search,UserRound,RefreshCw} from 'lucide-react';
 import {UkCampusMap} from '@/components/ui/uk-campus-map';
 import {UniversityBrand} from '@/components/ui/university-brand';
 import {campusMapPoint} from '@/lib/campus-map';
-import {listCampusRoster,type CampusRoster,type RosterCampus} from '@/lib/campus-roster';
+import {listCampusRoster,updateCampusLifecycle,type CampusRoster,type RosterCampus} from '@/lib/campus-roster';
 import {isInternalAccountEmail} from '@/lib/username-auth';
 import {friendly} from '@/lib/koc';
 import type {Jump} from '../dashboard';
 import './campus-network.css';
+import LeadApplicationRecords from './lead-application-records';
 const statusLabel=(status:RosterCampus['lifecycle_status'])=>status==='in_process'?'In process':status==='inactive'?'Inactive':'Active';
+function CampusStatusControl({campus,onSaved}:{campus:RosterCampus;onSaved:()=>Promise<void>}){
+ const [value,setValue]=useState(campus.lifecycle_status),[busy,setBusy]=useState(false),[error,setError]=useState('');
+ async function save(){setBusy(true);setError('');try{await updateCampusLifecycle(campus.id,value);await onSaved();}catch(e){setError(friendly(e));}finally{setBusy(false);}}
+ return <div className="campus-roster-note"><label>Set campus status<select value={value} disabled={busy} onChange={e=>setValue(e.target.value as RosterCampus['lifecycle_status'])}><option value="active">Active</option><option value="inactive">Inactive</option><option value="in_process">In process</option></select></label><p className="small muted">Only active campuses count in statistics. Account approval is managed separately.</p>{error&&<p role="alert">{error}</p>}<button type="button" className="button" disabled={busy||value===campus.lifecycle_status} onClick={save}>{busy?'Saving…':'Save campus status'}</button></div>;
+}
 const empty:CampusRoster={campuses:[],leaders:[],primaryLeads:[]};
-export default function CampusNetwork({jump}:{jump:Jump}){
+export default function CampusNetwork({jump,onCampusStatusChanged}:{jump:Jump;onCampusStatusChanged?:()=>Promise<void>}){
  const [roster,setRoster]=useState<CampusRoster>(empty),[selectedId,setSelectedId]=useState<string|null>(null),[traineeId,setTraineeId]=useState<string|null>(null),[query,setQuery]=useState(''),[status,setStatus]=useState('all'),[error,setError]=useState(''),[loading,setLoading]=useState(true);
  async function refresh(){setLoading(true);setError('');setRoster(empty);setTraineeId(null);try{const rows=await listCampusRoster();setRoster(rows);setSelectedId(previous=>rows.campuses.some(row=>row.id===previous)?previous:null);}catch(e){setError(friendly(e));}finally{setLoading(false);}}
  useEffect(()=>{let alive=true;listCampusRoster().then(rows=>{if(alive)setRoster(rows);}).catch(e=>{if(alive){setRoster(empty);setError(friendly(e));}}).finally(()=>{if(alive)setLoading(false);});return()=>{alive=false;};},[]);
@@ -29,16 +35,16 @@ export default function CampusNetwork({jump}:{jump:Jump}){
    <section className="campus-network-geography panel" aria-label="Campus network map">
     <UkCampusMap markers={visible.map(campus=>({id:campus.id,name:campus.lifecycle_status==='active'?campus.name:`${campus.name} — ${statusLabel(campus.lifecycle_status)}`,latitude:campus.latitude,longitude:campus.longitude,hasLead:campus.lifecycle_status==='active'&&!!roster.primaryLeads.find(lead=>lead.campus_id===campus.id)?.lead_id}))} selectedId={selectedId} onSelect={choose}/>
     <div className="campus-network-map-key"><span><i/>Active, assigned lead</span><span><i className="unassigned"/>Unassigned / inactive / in process</span></div>
-    <p className="campus-network-source">Pins include their campus status. Nearby pins are separated with lines to university reference locations, not confirmed meeting venues. UK boundary: Natural Earth. Locations: © OpenStreetMap contributors.</p>
+    <p className="campus-network-source">Pins include their campus status. Pins remain at university reference locations, not confirmed meeting venues. UK boundary: Natural Earth. Locations: © OpenStreetMap contributors.</p>
    </section>
    <div className="campus-network-details">
     <section className="panel padded campus-lead-card" aria-live="polite" aria-label="Selected campus lead profile">
      {selected?<><div className="eyebrow">ADMIN · CAMPUS PROFILE</div><UniversityBrand campusName={selected.name}/><p className="muted">{selected.region} · <span className={`campus-lifecycle ${selected.lifecycle_status}`}>{statusLabel(selected.lifecycle_status)}</span></p>
-      {selected.lifecycle_status!=='active'&&<p className="campus-roster-note">This campus is excluded from active statistics and reporting.</p>}
+      <CampusStatusControl key={selected.id+selected.lifecycle_status} campus={selected} onSaved={async()=>{await refresh();await onCampusStatusChanged?.();}}/>{selected.lifecycle_status!=='active'&&<p className="campus-roster-note">This campus is excluded from active statistics and reporting.</p>}
       <div className="campus-lead-identity"><span aria-hidden="true"><UserRound size={25}/></span><div><h3>{primary?.lead_name??'No primary lead assigned'}</h3><p className="muted">{primary?.lead_id?'Approved primary campus lead':'Assign an approved account in Accounts & access.'}</p></div></div>
       {primary?.lead_id&&<dl className="campus-lead-facts"><dt>Email</dt><dd>{primary.lead_email&&!isInternalAccountEmail(primary.lead_email)?<a href={`mailto:${primary.lead_email}`}>{primary.lead_email}</a>:'Not provided'}</dd><dt>Phone</dt><dd>{primary.lead_phone||'Not provided'}</dd><dt>Course</dt><dd>{primary.lead_course||'Not provided'}</dd><dt>Study year</dt><dd>{primary.lead_year??'Not provided'}</dd></dl>}
       {primary?.lead_bio&&<p className="campus-lead-bio">{primary.lead_bio}</p>}
-      <div className="campus-roster-trainees"><h3>Trainee profiles <span className="muted">({trainees.length})</span></h3><p className="muted small">2026 roster snapshot. A trainee record does not assign campus leadership or create an account.</p>
+      <LeadApplicationRecords key={selected.id} campusId={selected.id}/><div className="campus-roster-trainees"><h3>Trainee profiles <span className="muted">({trainees.length})</span></h3><p className="muted small">2026 roster snapshot. A trainee record does not assign campus leadership or create an account.</p>
        <ul>{trainees.map(leader=><li key={leader.id}><button aria-label={`View profile: ${leader.full_name}`} aria-pressed={traineeId===leader.id} onClick={()=>setTraineeId(leader.id)}>{validPortrait(leader.portrait_data)?<img src={leader.portrait_data!} alt=""/>:<span className="campus-roster-avatar"><UserRound size={20}/></span>}<span><strong>{leader.full_name}</strong><small>{leader.course||'Course not provided'}</small></span><ArrowRight size={16}/></button></li>)}</ul>{!trainees.length&&<p className="muted">No trainee profiles in this campus roster.</p>}
       </div>
       {trainee&&<section className="campus-trainee-detail" aria-label="Trainee profile"><div className="campus-trainee-heading">{validPortrait(trainee.portrait_data)&&<img src={trainee.portrait_data!} alt={`${trainee.full_name} portrait`}/>}<div><h3>{trainee.full_name}</h3><p className="muted small">2026 roster snapshot</p></div></div><dl className="campus-lead-facts"><dt>Course</dt><dd>{trainee.course||'Not provided'}</dd><dt>Study year</dt><dd>{trainee.study_year_text||'Not provided'}</dd><dt>Grade</dt><dd>{trainee.grade_label||'Not provided'}</dd><dt>Training</dt><dd>{trainee.training_attendance||'Not provided'}</dd><dt>Account</dt><dd>{trainee.account_id?'Linked account':'No account linked'}</dd></dl><p className="muted small">Source: roster page {trainee.source_page}, row {trainee.source_row}. Grades are the recorded snapshot, not a new submission.</p></section>}

@@ -1,2 +1,2 @@
-import AuthPage from '../auth-page';
-export default function Signup() { return <AuthPage mode="signup" />; }
+import LeadApplicationForm from '../views/lead-application-form';
+export default function Signup(){return <LeadApplicationForm/>;}

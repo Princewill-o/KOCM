@@ -1,0 +1,30 @@
+begin;
+do $$
+declare campus uuid; me uuid:=gen_random_uuid(); foreign_user uuid:=gen_random_uuid(); request uuid:=gen_random_uuid(); week date; saved public.campus_weekly_feedback; a jsonb;
+begin
+ select id into campus from public.campuses where is_active limit 1;
+ select start_date into week from public.seasons where is_current;
+ insert into auth.users(id,email,raw_user_meta_data) values(me,'feedback-test@example.org',jsonb_build_object('full_name','Feedback Lead','campus_id',campus)),(foreign_user,'feedback-pending@example.org',jsonb_build_object('full_name','Pending Lead','campus_id',campus));
+ update public.profiles set status='active' where id=me;
+ perform set_config('request.jwt.claim.sub',me::text,true);
+ a:=jsonb_build_object('sessionDate',week::text,'startTime','18:00','endTime','19:00','lesson','Week 1: Prayer','attendanceExcludingLead',4,'firstTimers',1,'bornAgain',0,'prayerMinutes',30,'prayerWalk','no','holyGhostBaptism','no','tonguesRecipients',999,'evangelismDatesTimes','Thursday 12pm','evangelismMinutes',20,'evangelismZeroReason','','soulsWon',0,'contactsTaken',2,'contactsAttendedFellowship',1,'homeVisits',0,'churchAttendeesExcludingCore',2,'churchAttendeesIncludingCore',4,'churchFirstTimers',0,'overallServing',1,'newDepartmentJoiners',0,'outreachOutings',1,'incidentNotes','Incident detail','lateReason','Test submitted later');
+ saved:=public.submit_campus_weekly_feedback(week,a,request);
+ if saved.campus_id<>campus or saved.submitter_name<>'Feedback Lead' or saved.answers ? 'tonguesRecipients' then raise exception 'Incorrect derived scope/identity or hidden answer';end if;
+ if (select attendance from public.reports where id=saved.report_id)<>4 then raise exception 'Metrics not mapped';end if;
+ if (public.submit_campus_weekly_feedback(week,a,request)).id<>saved.id then raise exception 'Idempotent retry failed';end if;
+ begin perform public.submit_campus_weekly_feedback(week,jsonb_set(a,'{attendanceExcludingLead}','5'),request);raise exception 'Changed retry accepted';exception when sqlstate '22023' then null;end;
+ begin perform public.submit_campus_weekly_feedback(week,jsonb_set(a,'{contactsTaken}','-1'),gen_random_uuid());raise exception 'Negative accepted';exception when sqlstate '22023' then null;end;
+ begin perform public.submit_campus_weekly_feedback(week,a||jsonb_build_object('campusId',gen_random_uuid()),gen_random_uuid());raise exception 'Foreign campus accepted';exception when sqlstate '22023' then null;end;
+ begin perform public.submit_campus_weekly_feedback(week,jsonb_set(a,'{lateReason}','""'),gen_random_uuid());raise exception 'Missing late reason accepted';exception when sqlstate '22023' then null;end;
+ perform set_config('request.jwt.claim.sub',foreign_user::text,true);
+ begin perform public.submit_campus_weekly_feedback(week,a,gen_random_uuid());raise exception 'Pending account accepted';exception when insufficient_privilege then null;end;
+ perform set_config('request.jwt.claim.sub',me::text,true);update public.campuses set is_active=false where id=campus;
+ begin perform public.submit_campus_weekly_feedback(week,a,gen_random_uuid());raise exception 'Inactive campus accepted';exception when insufficient_privilege then null;end;
+ update public.profiles set status='active',campus_id=(select id from public.campuses where is_active and id<>campus limit 1) where id=foreign_user;
+ perform set_config('request.jwt.claim.sub',foreign_user::text,true);
+ if has_table_privilege('authenticated','public.campus_weekly_feedback','update') or has_table_privilege('anon','public.campus_weekly_feedback','select') then raise exception 'Immutable/private grants violated';end if;
+end $$;
+set local role authenticated;
+do $$ begin if exists(select 1 from public.campus_weekly_feedback) then raise exception 'Foreign campus feedback visible';end if;end $$;
+reset role;
+rollback;

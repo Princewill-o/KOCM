@@ -1,0 +1,12 @@
+import {beforeEach,describe,expect,it,vi} from 'vitest';
+const mocks=vi.hoisted(()=>({rpc:vi.fn(),invoke:vi.fn(),from:vi.fn()}));
+vi.mock('../lib/supabase',()=>({supabase:()=>({rpc:mocks.rpc,functions:{invoke:mocks.invoke},from:mocks.from})}));
+import {listApplicationCampuses,submitLeadApplication} from '../lib/lead-applications';
+const application={requestId:'11111111-1111-4111-8111-111111111111',username:'campus_lead',password:'long-password-123',fullName:'Campus Lead',kind:'existing' as const,campusId:'22222222-2222-4222-8222-222222222222',course:'History',studyYear:2,motivation:'I want to support campus fellowship.',experience:'I have helped organise prayer meetings.',availability:'Tuesday afternoons',plan:'I will meet students and organise fellowship.'};
+beforeEach(()=>vi.clearAllMocks());
+describe('lead application client',()=>{
+ it('loads campus options with lifecycle labels from the dedicated public RPC',async()=>{mocks.rpc.mockResolvedValue({data:[{id:'campus',name:'Campus',lifecycle_status:'inactive'}],error:null});expect(await listApplicationCampuses()).toEqual([{id:'campus',name:'Campus',lifecycle_status:'inactive'}]);expect(mocks.rpc).toHaveBeenCalledWith('list_application_campuses');});
+ it('submits only an explicit validated application request and accepts confirmed success',async()=>{mocks.invoke.mockResolvedValue({data:{ok:true},error:null});await submitLeadApplication(application);expect(mocks.invoke).toHaveBeenCalledWith('lead-application',{body:{...application,newUniversityName:'',newUniversityCity:'',phone:''}});});
+ it('keeps the same request ID on a retry and never treats a server error as success',async()=>{mocks.invoke.mockResolvedValue({data:null,error:{message:'private failure'}});await expect(submitLeadApplication(application)).rejects.toThrow('Your application could not be submitted.');await expect(submitLeadApplication(application)).rejects.toThrow('Your application could not be submitted.');expect(mocks.invoke.mock.calls[0][1].body.requestId).toBe(mocks.invoke.mock.calls[1][1].body.requestId);});
+ it('rejects missing success and invalid application without submitting',async()=>{mocks.invoke.mockResolvedValue({data:{},error:null});await expect(submitLeadApplication(application)).rejects.toThrow('Your application could not be submitted.');mocks.invoke.mockClear();await expect(submitLeadApplication({...application,username:'bad name'})).rejects.toThrow();expect(mocks.invoke).not.toHaveBeenCalled();});
+});

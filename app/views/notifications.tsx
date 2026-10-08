@@ -6,7 +6,7 @@ import {
   acknowledgeNotification,
   type Notification,
 } from "@/lib/platform";
-export default function Notifications({onOpenReports}:{onOpenReports?:()=>void} = {}) {
+export default function Notifications({onOpenReports,onOpenApplication}:{onOpenReports?:()=>void;onOpenApplication?:(campusId:string|null)=>void} = {}) {
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<Notification[]>([]),
     [error, setError] = useState(""),
@@ -38,7 +38,7 @@ export default function Notifications({onOpenReports}:{onOpenReports?:()=>void} 
           <div className="eyebrow">LEADERSHIP INBOX</div>
           <h1>Notifications</h1>
           <p>
-            Review cluster submissions, late weekly reports and grades requiring support. Acknowledge
+            Review lead applications, cluster submissions, late weekly reports and grades requiring support. Acknowledge
             each alert after reading.
           </p>
         </div>
@@ -60,10 +60,10 @@ export default function Notifications({onOpenReports}:{onOpenReports?:()=>void} 
           >
             <div>
               <span className="eyebrow">
-                {r.kind === "low_grade" ? "ACADEMIC SUPPORT" : r.kind === "cluster_report" ? "CLUSTER REPORT" : "LATE REPORT"}
+                {r.kind === "lead_application" ? "LEAD APPLICATION" : r.kind === "low_grade" ? "ACADEMIC SUPPORT" : r.kind === "cluster_report" ? "CLUSTER REPORT" : "LATE REPORT"}
               </span>
               <h2>{r.title}</h2>
-              <p>{r.message}</p>{r.kind === "cluster_report" && <button type="button" className="text-button" onClick={onOpenReports}>Read cluster reports</button>}
+              <p>{r.message}</p>{r.kind === "lead_application" && <button type="button" className="text-button" onClick={()=>onOpenApplication?.(r.campus_id)}>Review application</button>}{r.kind === "cluster_report" && <button type="button" className="text-button" onClick={onOpenReports}>Read cluster reports</button>}
               <time className="small muted">
                 {new Date(r.created_at).toLocaleString("en-GB", {
                   timeZone: "Europe/London",

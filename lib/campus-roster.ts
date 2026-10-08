@@ -11,3 +11,9 @@ export async function listCampusRoster():Promise<CampusRoster>{
  if(!data||!Array.isArray(data.campuses)||!Array.isArray(data.leaders))throw new Error('Unable to load campus roster.');
  return {campuses:data.campuses,leaders:data.leaders,primaryLeads};
 }
+
+export async function updateCampusLifecycle(campusId:string,status:RosterCampus['lifecycle_status']):Promise<void>{
+ const {data,error}=await supabase().from('campuses').update({lifecycle_status:status}).eq('id',campusId).select('id').single();
+ if(error)throw new Error(friendly(error));
+ if(!data?.id)throw new Error('The campus status could not be saved.');
+}

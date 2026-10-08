@@ -1,5 +1,6 @@
 "use client";
-import { UK_OUTLINE } from "@/lib/uk-outline";
+import { UkCampusMap } from "@/components/ui/uk-campus-map";
+import "./campus-network.css";
 import { useState } from "react";
 import { type Campus, type Profile, friendly } from "@/lib/koc";
 import { useEffect } from "react";
@@ -66,10 +67,6 @@ export default function CampusMap({
       setBusy(false);
     }
   }
-  const point = (c: Campus) => ({
-    x: (((c.longitude ?? 0) + 8.5) / 10.5) * 420,
-    y: ((59.5 - (c.latitude ?? 0)) / 10) * 560,
-  });
   return (
     <>
       <div className="page-heading">
@@ -81,46 +78,7 @@ export default function CampusMap({
       </div>
       <div className="feature-map-layout">
         <section className="panel padded">
-          <svg
-            className="feature-uk-map"
-            viewBox="0 0 420 560"
-            role="img"
-            aria-label="UK campus map"
-          >
-            <title>UK campus locations</title>
-            <path
-              className="feature-land"
-              d={UK_OUTLINE}
-            />
-            {located.map((c) => {
-              const p = point(c);
-              return (
-                <g
-                  key={c.id}
-                  role="button"
-                  tabIndex={0}
-                  aria-label={c.name}
-                  onClick={() => setSelected(c)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      setSelected(c);
-                    }
-                  }}
-                >
-                  <circle
-                    cx={p.x}
-                    cy={p.y}
-                    r={selected?.id === c.id ? 9 : 6}
-                    fill="#c99100"
-                    stroke="white"
-                    strokeWidth="3"
-                  />
-                  <title>{c.name}</title>
-                </g>
-              );
-            })}
-          </svg>
+          <UkCampusMap markers={located.map(c=>({id:c.id,name:c.name,latitude:c.latitude??null,longitude:c.longitude??null,hasLead:!!c.is_active}))} selectedId={selected?.id??null} onSelect={id=>setSelected(all.find(c=>c.id===id)??null)}/>
           <p className="small muted">
             UK boundary: Natural Earth. University locations: © OpenStreetMap contributors (ODbL). Pins are not
             confirmed KOC meeting venues; campuses awaiting location details

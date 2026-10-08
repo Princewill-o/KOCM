@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Check, X, Mail } from 'lucide-react';
 import { listClusters, type Cluster } from '@/lib/platform';
 import { listProfiles, adminSetEmail, friendly, ROLE_LABELS, type Profile, type Campus, type Role, type Status } from '@/lib/koc';
+import LeadApplicationRecords from './lead-application-records';
 import {isInternalAccountEmail} from '@/lib/username-auth';
 import { accessDraft, saveAccountAccess, listAccountEmailDeliveries, deliverAccountEmails, type AccessDraft, type AccountEmailDelivery } from '@/lib/account-admin';
 
@@ -47,6 +48,7 @@ export default function Accounts({ profile, campuses }: { profile: Profile; camp
     <div className="page-heading"><div><div className="eyebrow">ADMINISTRATION</div><h1>Accounts &amp; access</h1><p>Review applications and assign administrator, campus or cluster access.</p></div></div>
     {error && <div className="management-alert" role="alert">{error}</div>}
     {message && <p role="status" className="success-message banner-message">{message}</p>}
+    <section className="panel padded"><LeadApplicationRecords campuses={campuses} statuses={Object.fromEntries(users.map(user=>[user.id,user.status]))}/></section>
     <section className="panel padded">
       <h2>Pending applications</h2><p className="muted small">Review the role and university or cluster in All accounts before approval. Declined applications queue an email; delivery status is shown below.</p>
       {!pending.length && <p className="empty-line">No pending requests.</p>}

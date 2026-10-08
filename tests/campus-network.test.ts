@@ -2,6 +2,7 @@
 import {createElement} from 'react';
 import {cleanup,fireEvent,render,screen,within} from '@testing-library/react';
 import {afterEach,expect,it,vi} from 'vitest';
+vi.mock('../lib/lead-applications',()=>({listLeadApplications:async()=>[]}));
 const load=vi.hoisted(()=>vi.fn());
 vi.mock('../lib/campus-roster',()=>({listCampusRoster:async()=>{const rows=await load();return {campuses:rows.map((row:Record<string,unknown>)=>({...row,id:row.campus_id,name:row.campus_name,is_active:true,lifecycle_status:'active'})),leaders:[],primaryLeads:rows};}}));
 vi.mock('../lib/koc',()=>({friendly:(error:Error)=>error.message}));

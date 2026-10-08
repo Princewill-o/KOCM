@@ -10,18 +10,18 @@
   "Bath": {
     "name": "Bath",
     "accent": "#00428a",
-    "logo": "/university-brands/bath-verified.png",
-    "source": "https://www.bath.ac.uk/lens/127/assets/university-of-bath/images/favicon/apple/apple-touch-icon-152x152.png",
+    "logo": "/university-brands/bath-wordmark.svg",
+    "source": "https://www.bath.ac.uk/lens/127/assets/university-of-bath/images/logo/uob-logo-wordmark-cornflower.svg",
     "website": "https://www.bath.ac.uk",
-    "markBackground": "#ffffff"
+    "markBackground": "#20231f"
   },
   "Birmingham City": {
     "name": "Birmingham City",
     "accent": "#092643",
-    "logo": "/university-brands/birmingham-city.png",
-    "source": "https://bcucdn.azureedge.net/cdl/v1.5/favicons/favicon-32x32.png",
+    "logo": "/university-brands/birmingham-city-wordmark.png",
+    "source": "https://bcucdn.azureedge.net/cdl/v1.5/imgs/bcu-logo-new.png",
     "website": "https://www.bcu.ac.uk",
-    "markBackground": "#ffffff"
+    "markBackground": "#20231f"
   },
   "Brighton": {
     "name": "Brighton",
@@ -42,16 +42,19 @@
   "Brunel": {
     "name": "Brunel",
     "accent": "#66716b",
-    "logo": null,
-    "source": null,
-    "website": "https://www.brunel.ac.uk"
+    "logo": "/university-brands/brunel-wordmark.svg",
+    "source": "https://www.brunel.ac.uk/image-library/logo/Hero-and-UoL-logos-300x96-2.xa6b80bfb.svg",
+    "website": "https://www.brunel.ac.uk",
+    "markBackground": "#fff",
+    "sourceNote": "Brunel mark from the official combined header asset; viewport excludes the separate University of London partner mark."
   },
   "Cardiff": {
     "name": "Cardiff",
     "accent": "#66716b",
-    "logo": null,
-    "source": null,
-    "website": "https://www.cardiff.ac.uk"
+    "logo": "/university-brands/cardiff-wordmark.svg",
+    "source": "https://sites.cardiff.ac.uk/education-development-toolkit/#global-header",
+    "website": "https://www.cardiff.ac.uk",
+    "markBackground": "#fff"
   },
   "CCCU": {
     "name": "CCCU",
@@ -64,47 +67,50 @@
   "City of London": {
     "name": "City of London",
     "accent": "#66716b",
-    "logo": null,
-    "source": null,
-    "website": "https://www.citystgeorges.ac.uk"
+    "logo": "/university-brands/city-of-london-wordmark.png",
+    "source": "https://openaccess.city.ac.uk/images/city-logo.jpg",
+    "website": "https://www.citystgeorges.ac.uk",
+    "markBackground": "#fff"
   },
   "Cheltenham": {
     "name": "Cheltenham",
     "accent": "#66716b",
-    "logo": null,
-    "source": null,
-    "website": "https://www.glos.ac.uk"
+    "logo": "/university-brands/cheltenham-wordmark.gif",
+    "source": "https://netreg.glos.ac.uk/netreg-gfx/UOGLogo.gif",
+    "website": "https://www.glos.ac.uk",
+    "markBackground": "#fff"
   },
   "Coventry": {
     "name": "Coventry",
     "accent": "#66716b",
-    "logo": "/university-brands/coventry.png",
-    "source": "https://www.coventry.ac.uk/contentassets/122de9a7e8334c569cf744ca691165bb/queens-award.png",
+    "logo": "/university-brands/coventry-wordmark.svg",
+    "source": "https://www.coventry.ac.uk/globalassets/media/logos/cov.svg",
     "website": "https://www.coventry.ac.uk",
-    "markBackground": "#20231f"
+    "markBackground": "#fff"
   },
   "Derby": {
     "name": "Derby",
     "accent": "#071747",
-    "logo": "/university-brands/derby-verified.png",
-    "source": "https://www.derby.ac.uk/media/global/system/favicons/apple-touch-icon.png",
+    "logo": "/university-brands/derby-wordmark.svg",
+    "source": "https://www.derby.ac.uk/#site-header",
     "website": "https://www.derby.ac.uk",
-    "markBackground": "#ffffff"
+    "markBackground": "#20231f"
   },
   "DMU": {
     "name": "DMU",
     "accent": "#66716b",
-    "logo": null,
-    "source": null,
-    "website": "https://www.dmu.ac.uk"
+    "logo": "/university-brands/dmu-wordmark.svg",
+    "source": "https://www.dmu.ac.uk/siteelements/2018/images/logo.svg",
+    "website": "https://www.dmu.ac.uk",
+    "markBackground": "#fff"
   },
   "Essex": {
     "name": "Essex",
     "accent": "#66716b",
-    "logo": "/university-brands/essex-verified.png",
-    "source": "https://www.essex.ac.uk/#header-logo",
+    "logo": "/university-brands/essex-wordmark.svg",
+    "source": "https://www.essex.ac.uk/#site-header",
     "website": "https://www.essex.ac.uk",
-    "markBackground": "#ffffff"
+    "markBackground": "#fff"
   },
   "Glenside Campus": {
     "name": "Glenside Campus",
@@ -133,17 +139,18 @@
   "Kingston": {
     "name": "Kingston",
     "accent": "#66716b",
-    "logo": null,
-    "source": null,
-    "website": "https://www.kingston.ac.uk"
+    "logo": "/university-brands/kingston-wordmark.jpg",
+    "source": "https://researchinnovation.kingston.ac.uk/skin/headerImage/",
+    "website": "https://www.kingston.ac.uk",
+    "markBackground": "#fff"
   },
   "Liverpool": {
     "name": "Liverpool",
     "accent": "#212b58",
-    "logo": "/university-brands/liverpool-verified.png",
-    "source": "https://www.liverpool.ac.uk/rb/assets/apple-touch-icon.png",
+    "logo": "/university-brands/liverpool-wordmark.svg",
+    "source": "https://www.liverpool.ac.uk/#site-header",
     "website": "https://www.liverpool.ac.uk",
-    "markBackground": "#ffffff"
+    "markBackground": "#fff"
   },
   "Medway": {
     "name": "Medway",
@@ -156,18 +163,18 @@
   "Northampton": {
     "name": "Northampton",
     "accent": "#66716b",
-    "logo": "/university-brands/northampton-verified.png",
-    "source": "https://www.northampton.ac.uk/wp-content/themes/uon-2020/assets/images/favicon/apple-touch-icon.png",
+    "logo": "/university-brands/northampton-wordmark.svg",
+    "source": "https://www.northampton.ac.uk/wp-content/themes/uon-2020/assets/images/svg/logo-header-uon.svg",
     "website": "https://www.northampton.ac.uk",
-    "markBackground": "#ffffff"
+    "markBackground": "#20231f"
   },
   "Nottingham Trent": {
     "name": "Nottingham Trent",
     "accent": "#e4005b",
-    "logo": "/university-brands/nottingham-trent-verified.png",
-    "source": "https://www.ntu.ac.uk/media/images/favicons/apple-touch-icon.png",
+    "logo": "/university-brands/nottingham-trent-wordmark.svg",
+    "source": "https://www.ntu.ac.uk/__data/assets/git_bridge/0034/519496/images/icons.svg#ntu-logo",
     "website": "https://www.ntu.ac.uk",
-    "markBackground": "#ffffff"
+    "markBackground": "#fff"
   },
   "Portsmouth": {
     "name": "Portsmouth",
@@ -183,20 +190,21 @@
     "logo": "/university-brands/qmul.png",
     "source": "https://www.qmul.ac.uk/media/ow-assets/assets/icons/Queen-Mary_Est_1785_RGB_White_Dark-Yellow-3.png",
     "website": "https://www.qmul.ac.uk",
-    "markBackground": "#ffffff"
+    "markBackground": "#20231f"
   },
   "Reading": {
     "name": "Reading",
     "accent": "#df1b2b",
-    "logo": null,
-    "source": "https://www.reading.ac.uk/homepage/web/multimediafiles/legacy-favicon.ico",
-    "website": "https://www.reading.ac.uk"
+    "logo": "/university-brands/reading-wordmark.png",
+    "source": "https://www.reading.ac.uk/homepage/web/multimediafiles/legacy-uor-home.png",
+    "website": "https://www.reading.ac.uk",
+    "markBackground": "#fff"
   },
   "Surrey": {
     "name": "Surrey",
     "accent": "#66716b",
-    "logo": "/university-brands/surrey.svg",
-    "source": "https://www.surrey.ac.uk/themes/custom/surrey_2024/dist/images/uos-logo-mobile.svg",
+    "logo": "/university-brands/surrey-wordmark.svg",
+    "source": "https://www.surrey.ac.uk/themes/custom/surrey_2024/dist/images/uos-logo.svg",
     "website": "https://www.surrey.ac.uk",
     "markBackground": "#20231f"
   },
@@ -211,10 +219,10 @@
   "UKC": {
     "name": "UKC",
     "accent": "#1b4c81",
-    "logo": "/university-brands/ukc.png",
-    "source": "https://www.kent.ac.uk/kent-theme-assets/assets/images/favicons/apple-touch-icon.png?1791292123",
+    "logo": "/university-brands/ukc-wordmark.svg",
+    "source": "https://www.kent.ac.uk/#site-header",
     "website": "https://www.kent.ac.uk",
-    "markBackground": "#ffffff"
+    "markBackground": "#fff"
   },
   "University of Birmingham": {
     "name": "University of Birmingham",
@@ -267,60 +275,66 @@
   "Warwick": {
     "name": "Warwick",
     "accent": "#66716b",
-    "logo": "/university-brands/warwick-verified.png",
-    "source": "https://d36jn9qou1tztq.cloudfront.net/static_war/render/id7/images/apple-touch-icon-180x180.png.265479534550",
+    "logo": "/university-brands/warwick-wordmark.svg",
+    "source": "https://warwick.ac.uk/static_war/render/id7/images/wordmark.svg.136055278947",
     "website": "https://www.warwick.ac.uk",
-    "markBackground": "#ffffff"
+    "markBackground": "#fff"
   },
   "Wolverhampton": {
     "name": "Wolverhampton",
     "accent": "#66716b",
-    "logo": null,
-    "source": null,
-    "website": "https://www.wlv.ac.uk"
+    "logo": "/university-brands/wolverhampton-wordmark.svg",
+    "source": "https://wlv.openrepository.com/assets/client/images/wlv_logo.svg",
+    "website": "https://www.wlv.ac.uk",
+    "markBackground": "#fff"
   },
   "Anglia Ruskin": {
     "name": "Anglia Ruskin",
     "accent": "#ffd100",
-    "logo": null,
-    "source": "https://www.aru.ac.uk/favicon.ico",
-    "website": "https://www.aru.ac.uk"
+    "logo": "/university-brands/anglia-ruskin-wordmark.svg",
+    "source": "https://www.aru.ac.uk/-/media/Core/logo--aru.svg",
+    "website": "https://www.aru.ac.uk",
+    "markBackground": "#20231f"
   },
   "Bath spa": {
     "name": "Bath spa",
     "accent": "#203351",
-    "logo": null,
-    "source": "https://www.bathspa.ac.uk/media/bathspaacuk/sitewide/logos-and-site-images/favicon.ico",
-    "website": "https://www.bathspa.ac.uk"
+    "logo": "/university-brands/bath-spa-wordmark.svg",
+    "source": "https://www.bathspa.ac.uk/#site-header",
+    "website": "https://www.bathspa.ac.uk",
+    "markBackground": "#fff"
   },
   "Bournemouth": {
     "name": "Bournemouth",
     "accent": "#66716b",
-    "logo": null,
-    "source": null,
-    "website": "https://www.bournemouth.ac.uk"
+    "logo": "/university-brands/bournemouth-wordmark.png",
+    "source": "https://staffprofiles.bournemouth.ac.uk/images/bu-logo.png",
+    "website": "https://www.bournemouth.ac.uk",
+    "markBackground": "#fff"
   },
   "Hertfordshire": {
     "name": "Hertfordshire",
     "accent": "#66716b",
-    "logo": null,
-    "source": null,
-    "website": "https://www.herts.ac.uk"
+    "logo": "/university-brands/hertfordshire-wordmark.png",
+    "source": "https://researchprofiles.herts.ac.uk/skin/headerImage/",
+    "website": "https://www.herts.ac.uk",
+    "markBackground": "#20231f"
   },
   "Leicester": {
     "name": "Leicester",
     "accent": "#66716b",
-    "logo": null,
-    "source": null,
-    "website": "https://www.le.ac.uk"
+    "logo": "/university-brands/leicester-wordmark.png",
+    "source": "https://www180.lamp.le.ac.uk/static/img/logos/uniofleicesterlogo.png",
+    "website": "https://www.le.ac.uk",
+    "markBackground": "#fff"
   },
   "Loughborough": {
     "name": "Loughborough",
     "accent": "#31165f",
-    "logo": "/university-brands/loughborough.png",
-    "source": "https://www.lboro.ac.uk/web-assets/shared/favicon/apple-touch-icon-57x57.png",
+    "logo": "/university-brands/loughborough-wordmark.svg",
+    "source": "https://www.lboro.ac.uk/web-assets/prod/fountain/images/logos/lboro.svg",
     "website": "https://www.lboro.ac.uk",
-    "markBackground": "#ffffff"
+    "markBackground": "#20231f"
   },
   "LSBU": {
     "name": "LSBU",
@@ -333,18 +347,18 @@
   "Middlesex": {
     "name": "Middlesex",
     "accent": "#66716b",
-    "logo": "/university-brands/middlesex.png",
-    "source": "https://pxl-mdxacuk.terminalfour.net/prod01/channel_3/media/middlesex-university/site-assets/images/logo-invert.053c89da.png",
+    "logo": "/university-brands/middlesex-wordmark.png",
+    "source": "https://pxl-mdxacuk.terminalfour.net/prod01/channel_3/media/middlesex-university/site-assets/images/logo.8c9a22fe.png",
     "website": "https://www.mdx.ac.uk",
     "markBackground": "#20231f"
   },
   "Ravensbourne": {
     "name": "Ravensbourne",
     "accent": "#0069b4",
-    "logo": "/university-brands/ravensbourne-verified.png",
-    "source": "https://www.ravensbourne.ac.uk/themes/custom/numiko/favicons/apple-touch-icon.png",
+    "logo": "/university-brands/ravensbourne-wordmark.svg",
+    "source": "https://www.ravensbourne.ac.uk/#site-header",
     "website": "https://www.ravensbourne.ac.uk",
-    "markBackground": "#ffffff"
+    "markBackground": "#fff"
   },
   "Oxford Brookes": {
     "name": "Oxford Brookes",
@@ -360,7 +374,7 @@
     "logo": "/university-brands/exeter.svg",
     "source": "https://www.exeter.ac.uk/v8media/recruitmentsites/images/homepage/uoe-logo.svg",
     "website": "https://www.exeter.ac.uk",
-    "markBackground": "#ffffff"
+    "markBackground": "#20231f"
   },
   "Royal Holloway": {
     "name": "Royal Holloway",
@@ -369,5 +383,13 @@
     "source": "https://www.royalholloway.ac.uk/images/logoRoyalHolloway2x.png",
     "website": "https://www.royalholloway.ac.uk",
     "markBackground": "#ffffff"
+  },
+  "Colleges": {
+    "name": "Colleges",
+    "accent": "#687168",
+    "logo": null,
+    "source": null,
+    "website": null,
+    "kind": "group"
   }
 }
