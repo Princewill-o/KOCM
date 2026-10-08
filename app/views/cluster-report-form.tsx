@@ -1,5 +1,6 @@
 'use client';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { submitClusterReport } from '@/lib/cluster-reports';
 import type { Campus, Profile } from '@/lib/koc';
 import { clusterAreas, sanitizeClusterDraft, validateClusterDraft, visibleQuestions, type ClusterDraft, type ClusterQuestion } from '@/lib/cluster-report-form';
 
@@ -10,6 +11,26 @@ export default function ClusterReportForm({ profile, campuses, clusters = [] }: 
   const [draft, setDraft] = useState<ClusterDraft>({ scope: 'cluster', campusId: '', areas: [] });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [review, setReview] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const [saved, setSaved] = useState<{ id: string; created_at: string } | null>(null);
+  const requestId = useRef<string | null>(null);
+  const submitting = useRef(false);
+  async function submit() {
+    if (submitting.current || saved) return;
+    submitting.current = true; setBusy(true); setSubmitError('');
+    try {
+      requestId.current ??= crypto.randomUUID();
+      const result = await submitClusterReport(sanitizeClusterDraft(draft), requestId.current);
+      setSaved(result);
+    } catch (e) {
+      setSubmitError(e instanceof Error ? e.message : 'Unable to submit the report. Please try again.');
+    } finally { submitting.current = false; setBusy(false); }
+  }
+  function newReport() {
+    setDraft({ scope: 'cluster', campusId: '', areas: [] }); setReview(false);
+    setSaved(null); setErrors({}); setSubmitError(''); requestId.current = null;
+  }
   function change(id: string, value: string | string[]) {
     setDraft(current => sanitizeClusterDraft({ ...(id === 'scope' || id === 'campusId' ? { scope: current.scope, campusId: '', areas: [] } : current), [id]: value }));
     setErrors({}); setReview(false);
@@ -26,10 +47,10 @@ export default function ClusterReportForm({ profile, campuses, clusters = [] }: 
   }
   return <section className="panel" style={{ maxWidth: 850, margin: '0 auto', padding: 'clamp(16px, 3vw, 32px)' }}>
     <h2>Cluster report</h2>
-    <p role="status"><strong>Form preview — nothing is submitted.</strong> Answers remain only in this page and disappear when you leave or reload.</p>
+    <p>Review your answers before submitting. Draft answers are not saved automatically.</p>
     <p>Use this form to review activity and concerns in your cluster. Questions marked * are required for review.</p>
     <p><strong>Cluster lead:</strong> {profile.full_name}<br /><strong>Cluster:</strong> {clusterName}</p>
-    {review ? <div><h3>Review your answers</h3><p><strong>Scope:</strong> {draft.scope === 'cluster' ? 'Whole cluster' : 'Individual campus'}</p><p><strong>Campus:</strong> {ownCampuses.find(c => c.id === draft.campusId)?.name ?? 'N/A'}</p>{clusterAreas.filter(a => (draft.areas as string[]).includes(a.id)).map(area => <section key={area.id} style={{ marginTop: 24 }}><h3>{area.title}</h3><p>{draft[area.id] === 'yes' ? 'Yes' : draft[area.id] === 'no' ? 'No' : 'Not answered'}</p><dl>{visibleQuestions(draft, area).map(q => <div key={q.id} style={{ marginBottom: 12 }}><dt><strong>{q.label}</strong></dt><dd style={{ margin: 0, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{draft[q.id] ? String(draft[q.id]) : 'Not answered'}</dd></div>)}</dl></section>)}<button type="button" className="button button-yellow" onClick={() => setReview(false)}>Back to edit</button><p>No report has been sent or saved.</p></div> : <div>
+    {saved ? <div role="status"><h3>Report submitted</h3><p>Your report has been saved for your administrators to review.</p><p>Report reference: {saved.id}</p><button type="button" className="button button-yellow" onClick={newReport}>Start a new report</button></div> : review ? <div><h3>Review your answers</h3><p><strong>Scope:</strong> {draft.scope === 'cluster' ? 'Whole cluster' : 'Individual campus'}</p><p><strong>Campus:</strong> {ownCampuses.find(c => c.id === draft.campusId)?.name ?? 'N/A'}</p>{clusterAreas.filter(a => (draft.areas as string[]).includes(a.id)).map(area => <section key={area.id} style={{ marginTop: 24 }}><h3>{area.title}</h3><p>{draft[area.id] === 'yes' ? 'Yes' : draft[area.id] === 'no' ? 'No' : 'Not answered'}</p><dl>{visibleQuestions(draft, area).map(q => <div key={q.id} style={{ marginBottom: 12 }}><dt><strong>{q.label}</strong></dt><dd style={{ margin: 0, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{draft[q.id] ? String(draft[q.id]) : 'Not answered'}</dd></div>)}</dl></section>)}<button type="button" className="button button-yellow" disabled={busy} onClick={() => { setReview(false); setSubmitError(''); }}>Back to edit</button> <button type="button" className="button button-yellow" disabled={busy} onClick={submit}>{busy ? 'Submitting…' : 'Submit report'}</button>{submitError && <p role="alert">{submitError}</p>}</div> : <div>
       <div><label htmlFor="cluster-report-scope">Report scope *</label><select id="cluster-report-scope" className="input" value={String(draft.scope)} onChange={e => change('scope', e.target.value)}><option value="cluster">Whole cluster</option><option value="campus">Individual campus</option></select>{error('scope')}</div>
       <div style={{ marginTop: 18 }}><label htmlFor="cluster-report-campus">{draft.scope === 'campus' ? 'Campus *' : 'Campus visited (optional)'}</label><select id="cluster-report-campus" className="input" value={String(draft.campusId)} onChange={e => change('campusId', e.target.value)}><option value="">{draft.scope === 'campus' ? 'Choose a campus' : 'N/A — whole cluster'}</option>{ownCampuses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select>{error('campusId')}</div>
       {draft.scope === 'cluster' && <fieldset style={{ marginTop: 24, border: '1px solid var(--border)', borderRadius: 12, padding: 16 }}><legend>Reporting areas *</legend><p>Select the areas you want to report on.</p>{clusterAreas.map(a => <label key={a.id} style={{ display: 'flex', gap: 10, alignItems: 'center', minHeight: 44 }}><input type="checkbox" checked={(draft.areas as string[]).includes(a.id)} onChange={e => change('areas', e.target.checked ? [...draft.areas as string[], a.id] : (draft.areas as string[]).filter(id => id !== a.id))} />{a.title}</label>)}{error('areas')}</fieldset>}

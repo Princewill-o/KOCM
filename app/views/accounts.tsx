@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Check, X, Mail } from 'lucide-react';
 import { listClusters, type Cluster } from '@/lib/platform';
 import { listProfiles, adminSetEmail, friendly, ROLE_LABELS, type Profile, type Campus, type Role, type Status } from '@/lib/koc';
+import {isInternalAccountEmail} from '@/lib/username-auth';
 import { accessDraft, saveAccountAccess, listAccountEmailDeliveries, deliverAccountEmails, type AccessDraft, type AccountEmailDelivery } from '@/lib/account-admin';
 
 export default function Accounts({ profile, campuses }: { profile: Profile; campuses: Campus[] }) {
@@ -50,7 +51,7 @@ export default function Accounts({ profile, campuses }: { profile: Profile; camp
       <h2>Pending applications</h2><p className="muted small">Review the role and university or cluster in All accounts before approval. Declined applications queue an email; delivery status is shown below.</p>
       {!pending.length && <p className="empty-line">No pending requests.</p>}
       {pending.map(user => <div className="approval-row" key={user.id}>
-        <div><strong>{user.full_name}</strong><p>{user.email} · {user.campus?.name ?? 'No university'}</p>
+        <div><strong>{user.full_name}</strong><p>{user.username ? `@${user.username}` : isInternalAccountEmail(user.email) ? 'Username not set' : user.email} · {user.campus?.name ?? 'No university'}</p>
           <label htmlFor={`decline-${user.id}`} className="small">Decline reason (included in email)</label>
           <input id={`decline-${user.id}`} value={drafts[user.id].reason} maxLength={1000} disabled={!!busy} onChange={event => change(user.id,{reason:event.target.value})} />
         </div>
@@ -64,15 +65,16 @@ export default function Accounts({ profile, campuses }: { profile: Profile; camp
     </section>
     <section className="panel padded accounts-panel">
       <h2>All accounts</h2><p className="muted small">Administrators manage all campuses and accounts. Stats editors manage all campus statistics. Campus leads access their own university. Cluster leads view and submit weekly reports for their assigned cluster. Each university has one active campus lead, and each campus lead is assigned to one university. Campus statistics stay with that university when a lead changes. Changes take effect when you select Save access.</p>
-      <div className="management-table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>University / cluster</th><th>Status</th><th>Save</th></tr></thead><tbody>{users.map(user => {
+      <div className="management-table-wrap"><table><thead><tr><th>Name</th><th>Username</th><th>Email</th><th>Role</th><th>University / cluster</th><th>Status</th><th>Save</th></tr></thead><tbody>{users.map(user => {
         const draft = drafts[user.id];
         const unchanged = JSON.stringify(draft) === JSON.stringify(accessDraft(user));
         return <tr key={user.id}>
           <td><strong>{user.full_name}</strong>{user.id === profile.id && <span className="muted"> (you)</span>}</td>
+          <td>{user.username ? `@${user.username}` : 'Not set'}</td>
           <td>{editingEmail?.id === user.id ? <form className="inline-form" onSubmit={async event => {event.preventDefault(); const ok = await run(user.id,() => adminSetEmail(user.id,editingEmail.value),`Email updated for ${user.full_name}.`); if (ok) setEditingEmail(null);}}>
             <input type="email" required value={editingEmail.value} onChange={event => setEditingEmail({id:user.id,value:event.target.value})} aria-label={`New email for ${user.full_name}`} autoFocus />
             <button className="icon-text" disabled={!!busy}>Save</button><button type="button" className="icon-text" onClick={() => setEditingEmail(null)}>Cancel</button>
-          </form> : <span className="email-cell">{user.email}<button className="icon-text" disabled={!!busy} onClick={() => setEditingEmail({id:user.id,value:user.email})} aria-label={`Change email for ${user.full_name}`}><Mail size={14} />Change</button></span>}</td>
+          </form> : <span className="email-cell">{isInternalAccountEmail(user.email) ? 'Not added' : user.email}<button className="icon-text" disabled={!!busy} onClick={() => setEditingEmail({id:user.id,value:isInternalAccountEmail(user.email) ? '' : user.email})} aria-label={`Change email for ${user.full_name}`}><Mail size={14} />Change</button></span>}</td>
           <td><select className="table-select" aria-label={`Role for ${user.full_name}`} value={draft.role} disabled={!!busy} onChange={event => change(user.id,{role:event.target.value as Role})}>{(Object.keys(ROLE_LABELS) as Role[]).map(role => <option key={role} value={role}>{ROLE_LABELS[role]}</option>)}</select></td>
           <td>{draft.role === 'campus' ? <select className="table-select" value={draft.campusId} disabled={!!busy} aria-label={`University for ${user.full_name}`} onChange={event => change(user.id,{campusId:event.target.value})}><option value="">Choose university</option>{campuses.map(campus => <option key={campus.id} value={campus.id}>{campus.name}</option>)}</select> : draft.role === 'cluster' ? <select className="table-select" value={draft.clusterId} disabled={!!busy} aria-label={`Cluster for ${user.full_name}`} onChange={event => change(user.id,{clusterId:event.target.value})}><option value="">Choose cluster</option>{clusters.map(cluster => <option key={cluster.id} value={cluster.id}>{cluster.name} · {cluster.lead_name}</option>)}</select> : <span className="muted">All campuses</span>}</td>
           <td><select className="table-select" value={draft.status} disabled={!!busy} aria-label={`Status for ${user.full_name}`} onChange={event => change(user.id,{status:event.target.value as Status})}><option value="active">Active</option><option value="rejected">Declined / blocked</option><option value="pending">Pending</option></select>

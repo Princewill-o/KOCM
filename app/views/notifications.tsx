@@ -6,7 +6,7 @@ import {
   acknowledgeNotification,
   type Notification,
 } from "@/lib/platform";
-export default function Notifications() {
+export default function Notifications({onOpenReports}:{onOpenReports?:()=>void} = {}) {
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<Notification[]>([]),
     [error, setError] = useState(""),
@@ -38,7 +38,7 @@ export default function Notifications() {
           <div className="eyebrow">LEADERSHIP INBOX</div>
           <h1>Notifications</h1>
           <p>
-            Review late weekly reports and grades requiring support. Acknowledge
+            Review cluster submissions, late weekly reports and grades requiring support. Acknowledge
             each alert after reading.
           </p>
         </div>
@@ -60,10 +60,10 @@ export default function Notifications() {
           >
             <div>
               <span className="eyebrow">
-                {r.kind === "low_grade" ? "ACADEMIC SUPPORT" : "LATE REPORT"}
+                {r.kind === "low_grade" ? "ACADEMIC SUPPORT" : r.kind === "cluster_report" ? "CLUSTER REPORT" : "LATE REPORT"}
               </span>
               <h2>{r.title}</h2>
-              <p>{r.message}</p>
+              <p>{r.message}</p>{r.kind === "cluster_report" && <button type="button" className="text-button" onClick={onOpenReports}>Read cluster reports</button>}
               <time className="small muted">
                 {new Date(r.created_at).toLocaleString("en-GB", {
                   timeZone: "Europe/London",

@@ -46,3 +46,9 @@ Use the supplied flyer’s yellow Kharis On Campus lettering as the shared logo,
 ## Material watermark
 
 Protected reading pages use a single subtle KOC logo in the bottom-right corner. Do not overlay repeated names, emails or timestamps over teaching content. The logo is composited on the server; private access checks and audit records remain in place.
+
+## University identity and private roster
+
+Campus screens use university marks and a restrained accent drawn from the verified mark. Preserve logo colours and their readable light/dark backing. Missing verified marks use initials. Admin leadership profiles include a private 2026 trainee roster with click-through details and portraits. Clearly distinguish approved primary accounts from trainees and campus status from training attendance. Retain inactive and in-process campuses in the directory with text badges; their statistics action is disabled and they do not count towards active totals.
+
+Username is the primary registration field; email remains optional. The profile explains real-email verification and recovery availability without exposing internal Auth aliases. Submission confirmation appears only after database persistence succeeds.

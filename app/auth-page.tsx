@@ -5,12 +5,10 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ArrowRight, MailCheck } from "lucide-react";
+import { ArrowRight, MailCheck, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "./theme";
 import {
-  signIn,
-  signUp,
   requestPasswordReset,
   setNewPassword,
   listCampuses,
@@ -18,6 +16,7 @@ import {
   type Campus,
 } from "@/lib/koc";
 import { supabase } from "@/lib/supabase";
+import { signInWithIdentifier, signUpWithUsername, USERNAME_PATTERN, USERNAME_HELP } from "@/lib/username-auth";
 import { watchPasswordRecovery } from "@/lib/password-recovery";
 import "./management.css";
 import "./auth-design.css";
@@ -31,13 +30,13 @@ const strongPassword = z
   .max(128, "Use 128 characters or fewer.");
 const schemas = {
   login: z.object({
-    email,
+    identifier: z.string().trim().min(1, "Enter your username or email."),
     password: z.string().min(1, "Enter your password."),
   }),
   signup: z.object({
     fullName: z.string().trim().min(2, "Enter your full name.").max(100),
     campusId: z.string().min(1, "Select your university."),
-    email,
+    username: z.string().trim().regex(USERNAME_PATTERN, USERNAME_HELP),
     password: strongPassword,
   }),
   forgot: z.object({ email }),
@@ -50,6 +49,8 @@ const schemas = {
 };
 type Fields = {
   email?: string;
+  identifier?: string;
+  username?: string;
   password?: string;
   fullName?: string;
   campusId?: string;
@@ -69,7 +70,7 @@ const copy: Record<Mode, { title: string; lead: string; button: string }> = {
   },
   forgot: {
     title: "Reset your password",
-    lead: "Enter your account email and we’ll send you a secure reset link.",
+    lead: "Enter the verified email you added to your profile. We’ll send you a password reset link.",
     button: "Send reset link",
   },
   update: {
@@ -122,20 +123,14 @@ export default function AuthPage({ mode = "login" }: { mode?: Mode }) {
     setNotice("");
     try {
       if (mode === "login") {
-        await signIn(values.email!, values.password!);
+        await signInWithIdentifier(values.identifier!, values.password!);
         window.location.assign("/dashboard");
       } else if (mode === "signup") {
-        const { needsConfirmation } = await signUp({
-          fullName: values.fullName!,
-          email: values.email!,
-          password: values.password!,
-          campusId: values.campusId!,
+        await signUpWithUsername({
+          fullName: values.fullName!, username: values.username!,
+          password: values.password!, campusId: values.campusId!,
         });
-        if (needsConfirmation)
-          setNotice(
-            "Check your inbox to confirm your email address. After that, an administrator will verify your campus.",
-          );
-        else window.location.assign("/dashboard");
+        setNotice("Your account request has been received. An administrator will review your campus access. You can sign in with your username and password to check your approval status.");
       } else if (mode === "forgot") {
         await requestPasswordReset(values.email!);
         setNotice(
@@ -208,10 +203,11 @@ export default function AuthPage({ mode = "login" }: { mode?: Mode }) {
           </span>
           <h2>{title}</h2>
           <p>{lead}</p>
+          {mode === "forgot" && <p className="auth-approval-note">If you have not added a verified email, contact your campus lead or an administrator for help resetting your password.</p>}
           {notice ? (
             <div className="auth-notice" role="status">
-              <MailCheck size={20} />
-              <span>{notice}</span>
+              {mode === "signup" ? <Check size={20} /> : <MailCheck size={20} />}
+              <span>{notice}{mode === "signup" && <><br /><Link href="/login">Continue to sign in</Link></>}</span>
             </div>
           ) : (
             <form
@@ -250,19 +246,9 @@ export default function AuthPage({ mode = "login" }: { mode?: Mode }) {
                   </label>
                 </>
               )}
-              {mode !== "update" && (
-                <label>
-                  Email address
-                  <Input
-                    type="email"
-                    autoComplete="email"
-                    {...register("email")}
-                  />
-                  {errors.email && (
-                    <small className="form-error">{errors.email.message}</small>
-                  )}
-                </label>
-              )}
+              {mode === "signup" && <label>Username<Input type="text" autoComplete="username" autoCapitalize="none" spellCheck={false} maxLength={30} {...register("username")} /><small>{USERNAME_HELP}</small>{errors.username && <small className="form-error">{errors.username.message}</small>}</label>}
+              {mode === "login" && <label>Username or email<Input type="text" autoComplete="username" autoCapitalize="none" spellCheck={false} {...register("identifier")} />{errors.identifier && <small className="form-error">{errors.identifier.message}</small>}</label>}
+              {mode === "forgot" && <label>Email address<Input type="email" autoComplete="email" {...register("email")} />{errors.email && <small className="form-error">{errors.email.message}</small>}</label>}
               {mode !== "forgot" && (
                 <label>
                   {mode === "update" ? "New password" : "Password"}
@@ -327,8 +313,7 @@ export default function AuthPage({ mode = "login" }: { mode?: Mode }) {
           )}
           {mode === "signup" && (
             <p className="auth-approval-note">
-              After confirming your email, an administrator will verify your
-              campus before granting access.
+              An administrator will verify your campus before granting access. Email is optional; you can add one in your profile for notifications and password recovery.
             </p>
           )}
         </div>

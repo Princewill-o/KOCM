@@ -1,5 +1,7 @@
 'use client';
 import BrandLogo from '@/components/ui/brand-logo';
+import {UniversityBrand,universityBrand} from '@/components/ui/university-brand';
+import type {CSSProperties} from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import { LogOut, LayoutDashboard, Building2, ClipboardPen, UsersRound, UserRound, GraduationCap, BookOpen, Bell, ChartNoAxesCombined, ContactRound, MapPin } from 'lucide-react';
 import FloatingNav from './components/floating-nav';
@@ -12,6 +14,7 @@ import CampusView from './views/campus-view';
 import CampusNetwork from './views/campus-network';
 import ReportForm from './views/report-form';
 import ClusterReportForm from './views/cluster-report-form';
+import ClusterReportRecords from './views/cluster-report-records';
 import Accounts from './views/accounts';
 import ProfileView from './views/profile';
 import './management.css';
@@ -115,7 +118,8 @@ export default function Dashboard() {
   const allAccess = canSeeAllCampuses(profile);
   const visibleCampuses = profile ? statsCampuses(profile, campuses) : [];
 
-  return <div className="app-shell">
+  const universityName = profile?.role === 'campus' ? profile.campus?.name ?? '' : tab === 'campus' || (tab === 'enter' && profile?.role !== 'cluster') ? visibleCampuses.find(c=>c.id===campusId)?.name ?? '' : '';
+  return <div className={`app-shell ${universityName?'campus-themed':''}`} style={{'--campus-accent':universityBrand(universityName)?.accent??'var(--yellow)'} as CSSProperties}>
     <header className="site-header">
       <a className="brand" href="/dashboard"><BrandLogo /></a>
 
@@ -128,8 +132,10 @@ export default function Dashboard() {
     <FloatingNav items={navigation.primary.map(item => ({ ...item, icon: navIcons[item.id] }))} active={navigation.active} unread={unread} onSelect={next => jump(next)} />
     <main className="workspace">
       <div className="workspace-transition" key={tab}>
+      {universityName && <UniversityBrand campusName={universityName} />}
       <div className="breadcrumb">Kharis On Campus Management<span>/ {tabs.find((t) => t.id === tab)?.label}</span></div>
       {navigation.secondary.length > 1 && <nav className="section-navigation" aria-label="Section navigation">{navigation.secondary.map(item => <button type="button" key={item.id} aria-current={tab === item.id ? 'page' : undefined} onClick={() => jump(item.id)}>{item.label}</button>)}</nav>}
+      {profile?.role === 'campus' && profile.campus?.is_active === false && <div className="management-alert" role="status"><strong>{profile.campus.name}: {profile.campus.lifecycle_status === 'in_process' ? 'In process' : 'Inactive'}.</strong> This campus is retained for records and excluded from active reporting statistics.</div>}
       {error && <div className="management-alert" role="alert">{error}</div>}
       {loading ? <p role="status" className="loading-line">Loading your workspace…</p>
         : !profile ? null
@@ -152,14 +158,15 @@ export default function Dashboard() {
           {tab === 'overview' && allAccess && <Overview season={season} profile={profile} jump={jump} />}
           {tab === 'campus' && !visibleCampuses.length && <section className="panel padded"><h1>No campuses assigned yet</h1><p>An administrator must assign your campus or cluster before its statistics appear.</p></section>}
           {tab === 'campus' && !!visibleCampuses.length && <CampusView key={campusId} season={season} profile={profile} campuses={visibleCampuses} campusId={campusId} setCampusId={setCampusId} jump={jump} />}
-          {tab === 'enter' && profile.role === 'cluster' && <ClusterReportForm profile={profile} campuses={visibleCampuses} />}
+          {tab === 'enter' && profile.role === 'cluster' && <><ClusterReportForm profile={profile} campuses={visibleCampuses} /><ClusterReportRecords campuses={visibleCampuses} /></>}
+          {tab === 'enter' && profile.role !== 'cluster' && <ClusterReportRecords campuses={visibleCampuses} />}
           {tab === 'enter' && profile.role !== 'cluster' && <ReportForm season={season} profile={profile} campuses={visibleCampuses} campusId={campusId} setCampusId={setCampusId} initialWeek={weekEnding} />}
           {tab === 'map' && profile.role === 'admin' && <CampusNetwork jump={jump} />}
           {tab === 'accounts' && profile.role === 'admin' && <Accounts profile={profile} campuses={campuses} />}
           {tab === 'grades' && <Grades profile={profile} campuses={visibleCampuses} />}
           {tab === 'contacts' && <Contacts profile={profile} campuses={visibleCampuses} />}
           {tab === 'materials' && <Materials profile={profile} campuses={visibleCampuses} />}
-          {tab === 'notifications' && <Notifications />}
+          {tab === 'notifications' && <Notifications onOpenReports={() => jump('enter')} />}
           {tab === 'quarters' && profile.role !== 'campus' && <QuarterView campuses={visibleCampuses} />}
           {tab === 'profile' && <ProfileView profile={profile} onChange={load} />}
         </>}

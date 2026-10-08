@@ -18,6 +18,7 @@ export function navigationFor(profile: Profile, current: Tab) {
 }
 export function statsCampuses(profile: Profile, campuses: Campus[]) {
   if (profile.status !== 'active') return [];
+  campuses = campuses.filter(c=>c.is_active !== false && (!c.lifecycle_status || c.lifecycle_status === 'active'));
   if (profile.role === 'campus') return campuses.filter(c => c.id === profile.campus_id);
   if (profile.role === 'cluster') return campuses.filter(c => !!profile.cluster_id && c.cluster_id === profile.cluster_id);
   return campuses;

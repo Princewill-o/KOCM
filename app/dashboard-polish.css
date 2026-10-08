@@ -17,3 +17,12 @@
 @keyframes workspace-marker{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 @media(max-width:600px){.app-shell .button{font-size:12px}.app-shell .workspace{padding-bottom:190px!important}.app-shell .header-actions .quiet-link{border-radius:50%;padding:0}}
 @media(prefers-reduced-motion:reduce){.workspace-transition,.app-shell .panel,.app-shell .page-heading h1::after{animation:none}.app-shell .button,.app-shell .section-navigation button{transition:none}.app-shell .button:hover:not(:disabled){transform:none}}
+
+.university-brand{display:flex;align-items:center;gap:16px;border-left:4px solid var(--border);padding:12px 16px;background:var(--card);border-radius:8px;margin:12px 0 24px}
+.university-brand img{width:120px;height:52px;object-fit:contain;background:#fff;padding:6px;border-radius:4px}
+.university-brand small{display:block;color:var(--muted-foreground);margin-top:4px}
+.university-brand.compact{margin:0;padding:4px 8px}.university-brand.compact img{width:70px;height:32px}
+.university-brand-initials{font-weight:700;padding:12px;border:1px solid var(--border);border-radius:8px}
+.campus-themed .section-navigation button[aria-current=page]{box-shadow:inset 0 -3px 0 var(--campus-accent)}
+.campus-themed .workspace{border-top:3px solid var(--campus-accent)}
+@media(max-width:500px){.university-brand{gap:12px;padding:10px}.university-brand img{width:90px}.university-brand strong{font-size:14px}}

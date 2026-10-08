@@ -3,7 +3,7 @@ import {createElement} from 'react';
 import {cleanup,fireEvent,render,screen,within} from '@testing-library/react';
 import {afterEach,expect,it,vi} from 'vitest';
 const load=vi.hoisted(()=>vi.fn());
-vi.mock('../lib/platform',()=>({listCampusLeadProfiles:load}));
+vi.mock('../lib/campus-roster',()=>({listCampusRoster:async()=>{const rows=await load();return {campuses:rows.map((row:Record<string,unknown>)=>({...row,id:row.campus_id,name:row.campus_name,is_active:true,lifecycle_status:'active'})),leaders:[],primaryLeads:rows};}}));
 vi.mock('../lib/koc',()=>({friendly:(error:Error)=>error.message}));
 import CampusNetwork from '../app/views/campus-network';
 afterEach(()=>{cleanup();load.mockReset();});
@@ -19,7 +19,7 @@ it('keeps campuses without coordinates selectable and does not invent a leader',
  load.mockResolvedValue([{campus_id:'b',campus_name:'Unknown Campus',region:'North',latitude:null,longitude:null,lead_id:null}]);
  render(createElement(CampusNetwork,{jump:vi.fn()}));
  fireEvent.click(await screen.findByRole('button',{name:/Unknown Campus/}));
- expect(screen.getByText('No campus lead assigned')).toBeTruthy();expect(screen.queryByRole('button',{name:'Open campus lead profile: Unknown Campus'})).toBeNull();
+ expect(screen.getByText('No primary lead assigned')).toBeTruthy();expect(screen.queryByRole('button',{name:'Open campus lead profile: Unknown Campus'})).toBeNull();
  fireEvent.change(screen.getByRole('searchbox'),{target:{value:'missing'}});expect(screen.getByText('No campuses match your search.')).toBeTruthy();
 });
 it('shows directory access failures without exposing cached details',async()=>{

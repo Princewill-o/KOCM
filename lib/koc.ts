@@ -8,6 +8,7 @@ export type Profile = {
   id: string;
   full_name: string;
   email: string;
+  username?: string | null;
   role: Role;
   status: Status;
   campus_id: string | null;
@@ -18,9 +19,9 @@ export type Profile = {
   cluster_id?: string | null;
   created_at: string;
   rejection_reason?: string | null;
-  campus?: { name: string } | null;
+  campus?: { name: string; is_active?: boolean; lifecycle_status?: 'active' | 'inactive' | 'in_process' } | null;
 };
-export type Campus = { id: string; name: string; region: string; cluster_id?: string | null; latitude?: number | null; longitude?: number | null; address?: string | null; meeting_info?: string | null; contact_email?: string | null };
+export type Campus = { is_active?: boolean; lifecycle_status?: 'active' | 'inactive' | 'in_process'; id: string; name: string; region: string; cluster_id?: string | null; latitude?: number | null; longitude?: number | null; address?: string | null; meeting_info?: string | null; contact_email?: string | null };
 export type Report = {
   id: string;
   campus_id: string;
@@ -164,7 +165,7 @@ export async function currentProfile(): Promise<Profile | null> {
   const { data: auth } = await supabase().auth.getUser();
   if (!auth.user) return null;
   const profile = check(
-    await supabase().from('profiles').select('*, campus:campuses(name)').eq('id', auth.user.id).maybeSingle(),
+    await supabase().from('profiles').select('*, campus:campuses(name,is_active,lifecycle_status)').eq('id', auth.user.id).maybeSingle(),
   ) as Profile | null;
   return profile;
 }
@@ -223,7 +224,7 @@ export async function deleteReport(id: string) {
 
 // ── Admin ──────────────────────────────────────────────────────────────────
 export async function listProfiles(): Promise<Profile[]> {
-  return check(await supabase().from('profiles').select('*, campus:campuses(name)').order('created_at')) as Profile[];
+  return check(await supabase().from('profiles').select('*, campus:campuses(name,is_active,lifecycle_status)').order('created_at')) as Profile[];
 }
 
 export async function adminUpdateUser(id: string, changes: { role?: Role; status?: Status; campusId?: string | null; clusterId?: string | null; fullName?: string }) {

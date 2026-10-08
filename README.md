@@ -6,7 +6,7 @@ Weekly campus reporting for Kharis On Campus (KOC): attendance, prayer time, eva
 
 - **Frontend:** Next.js (vinext on Vite), React 19, shadcn/ui.
 - **Backend:** Supabase project **Kharis** (`yrqkafiqwllkphroztqk`, London region).
-  - **Supabase Auth** handles login, sign-up, sessions (secure cookies), password reset and email changes.
+  - **Supabase Auth** handles password authentication and sessions (secure cookies). The checked `username-auth` Edge Function adds username-only registration and username/email sign-in.
   - **Postgres + row level security** decide what each person can see. The browser never gets more data than its role allows.
   - Checked database functions (`submit_report`, `admin_update_user`, …), column grants and row level security validate writes and isolate campus data.
 - Schema, security rules and functions: `supabase/migrations/`.
@@ -18,7 +18,7 @@ Weekly campus reporting for Kharis On Campus (KOC): attendance, prayer time, eva
 | **Administrator** | Minister Bene, Pastor Awo, Princewill (after email confirmation) | See every campus, enter/edit any week, delete reports, approve campus reps, change anyone's role/status/email |
 | **Stats editor** | Taija Lee, Ashley | See every campus, enter/edit weekly stats for any campus |
 | **Campus rep** | university representatives | Own campus reports, grades, people and materials, after approval |
-| **Cluster lead** | Modupe, Elyon, Lindsay, Naa, Zipporah, Chiedza | Submit weekly reports for assigned cluster campuses; read scoped grades/people and review alerts |
+| **Cluster lead** | Modupe, Elyon, Lindsay, Naa, Zipporah, Chiedza | Submit conditional cluster reports; read scoped grades/people and review alerts |
 
 Everyone can update their own name and password under **My profile**. Administrators can change their own email directly; others confirm a new email from their inbox (or ask an admin to set it on the **Accounts** page).
 
@@ -50,7 +50,7 @@ The Supabase URL and publishable key are in `lib/supabase.ts` (they are safe to 
 
 ## Adding accounts
 
-- **Campus reps:** they sign up at `/signup`, confirm their email, then an admin approves them under **Accounts**.
+- **Campus reps:** they sign up at `/signup` with a username, name, university and password, then an admin approves them under **Accounts**. Email is optional.
 - **Admins / stats editors:** create the user in Supabase (Authentication → Users → Add user, tick *Auto confirm*). They appear under **Accounts → Pending** with no access; an admin approves them and picks their role.
 
 ## Campus workflows
@@ -63,7 +63,7 @@ The Supabase URL and publishable key are in `lib/supabase.ts` (they are safe to 
 - **Campus lead profiles:** active administrators can select a university on the UK map or searchable directory to review its assigned lead and open campus statistics. Unknown locations remain in the directory. Contact details are protected by an admin-only RPC. Each campus has at most one active campus lead; statistics stay with the campus when its lead changes. Pending applicants may share a requested campus until approval. Leads can update their own phone, course, study year and biography through a checked self-service RPC.
 - **Landing page:** university interest/account requests and existing member sign-in.
 
-Clusters follow the existing campus region data: London (Modupe), Midlands (Elyon), South (Lindsay), North (Naa), South East (Zipporah), West (Chiedza). Existing `West England` campuses map to West. `Colleges` remains unassigned. Real campus/cluster accounts need verified email addresses: use signup, then an administrator approves and assigns their campus or cluster under Accounts. Named cluster leads are a roster, not fabricated login accounts.
+Clusters follow the existing campus region data: London (Modupe), Midlands (Elyon), South (Lindsay), North (Naa), South East (Zipporah), West (Chiedza). Existing `West England` campuses map to West. `Colleges` remains unassigned. Campus registration uses usernames; verified email is optional for notifications and recovery. An administrator approves and assigns campus or cluster access under Accounts. Named cluster leads are a roster, not fabricated login accounts.
 
 See [database contracts and test instructions](supabase/WORKFLOWS.md). New migrations are in `supabase/migrations`; keep them in sync with the connected project before publishing the frontend.
 
@@ -99,8 +99,24 @@ Grace uses the `grace-chat` Supabase Edge Function to call Groq’s `openai/gpt-
 
 To activate model replies, keep the Groq account on its Free plan and save `GROQ_API_KEY` in Supabase Edge Function secrets. Never put it in frontend variables or source control. Deploy the Grace migration and function before the frontend. The service-only quota function limits requests globally and by hashed client identity; its private counters contain no questions or chat transcripts. Limits are conservative safeguards, not a guarantee that an external provider’s free allowance will never change. Provider failures never trigger a paid fallback.
 
-## Cluster report form preview
+## Cluster report submissions
 
-Cluster leads now open **Cluster report** in place of their weekly statistics form. The replacement follows the referenced [Microsoft cluster form](https://forms.cloud.microsoft/pages/responsepage.aspx?id=ktmX28Fl60WkrVF3jBeQnwiKGvS9Z0BLia2mFC7kl_lUMDk4SDRINDk2MUZYOElBUkhaVTBURTNaNyQlQCN0PWcu&route=shorturl): whole-cluster or individual-campus reporting, KOC sessions, evangelism, prayer, follow-up, core-team meetings and incidents. Only assigned cluster campuses are selectable. Issue details appear conditionally; core meeting organisation requires an explanation when **No** is selected. Hidden answers are discarded and excluded from review.
+Cluster leads use **Cluster report** in place of their weekly statistics form. The form follows the referenced [Microsoft cluster form](https://forms.cloud.microsoft/pages/responsepage.aspx?id=ktmX28Fl60WkrVF3jBeQnwiKGvS9Z0BLia2mFC7kl_lUMDk4SDRINDk2MUZYOElBUkhaVTBURTNaNyQlQCN0PWcu&route=shorturl): whole-cluster or individual-campus reporting across sessions, evangelism, prayer, follow-up, core-team meetings and incidents. Conditional hidden answers are discarded.
 
-This is explicitly a **review-only preview**: no submit button, autosave, browser storage or backend write. Answers disappear on leaving/reloading the page. Existing campus/admin/editor weekly statistics and saved report exports remain available; earlier documentation about cluster weekly statistics submission describes the previous UI. Saving cluster reports, admin records, PDF exports and report-deadline emails for this new format are not enabled by this preview. No Microsoft form response was submitted during inspection.
+**Review answers → Submit report** calls `submit_cluster_report`. The database checks active cluster assignment, campus scope and every required conditional answer, stores server-sourced lead name/email and submission time, and notifies active administrators. A stable request ID prevents duplicate retries. Success is shown only after the server confirms persistence. Drafts remain memory-only; leaving before submission loses the draft.
+
+Admins/editors read saved records under **Campuses → Weekly report → Submitted cluster reports**; cluster leads see their cluster records beneath their form. **Refresh reports** loads new submissions. Admin alerts link to the report view. Campus accounts cannot access cluster reports. No Microsoft form responses are sent. This format stores separate records rather than overwriting campus weekly statistics; its deadline summaries and PDF export are not yet implemented.
+
+## Usernames and optional email
+
+Sign-in accepts a username or an existing real account email. Username-only signup creates a pending campus account through the `username-auth` Edge Function; Supabase holds an opaque internal identifier that is never shown as a contact email or used for outbound mail. Usernames are unique, case-insensitive, and use 3–30 letters, numbers or underscores. Members choose/change their username in My profile. Existing email logins keep working.
+
+An account without real email can sign in and receive in-app alerts. Email notifications and password recovery need a verified real address. Adding an email to a username-only account requires its current password and a confirmation link delivered through configured SMTP. Missing sender configuration returns an explicit error without changing identity. The server confirms only the inaccessible internal identifier, never the user's new email. Existing real-email changes retain Supabase's native confirmation flow. No global confirmation setting is weakened.
+
+## Campus lifecycle and trainee directory
+
+The supplied 2026 campus list was imported into the connected database: 49 campuses, 37 active, 9 inactive, 3 in process. All remain visible to administrators; inactive/in-process campuses are excluded from reporting scopes, summary totals, weekly coverage, quarterly charts and statistics exports. Historical reports remain retained. The assigned account can still identify its inactive university.
+
+The 38 supplied trainee records, including portraits, course, year, grade label and training attendance, live in an admin-only roster. The directory distinguishes this dated snapshot from an approved primary account. Training attendance is not campus activity status. Multiple trainees at a university are preserved rather than choosing a primary lead automatically. These imported roster records are not login accounts: one primary campus lead must be selected before creating/approving its actual login. Source names, grades and portraits are not committed to public code or assets.
+
+University marks are bundled from observed official website assets with source URLs in `lib/university-brands.json`. University colours accent campus screens while retaining shared light/dark tokens. Where a verified mark is unavailable, an initials fallback is displayed rather than a substituted partner or award logo.

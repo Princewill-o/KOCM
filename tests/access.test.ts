@@ -55,3 +55,7 @@ describe('workspace permissions', () => {
     expect(tabsFor(profile('editor')).map(t=>t.id)).not.toContain('accounts');
   });
 });
+
+it('excludes inactive and in-process campuses from statistic scopes',()=>{
+ expect(statsCampuses(profile('admin'),[{...campuses[0],is_active:false,lifecycle_status:'inactive'}, {...campuses[1],is_active:false,lifecycle_status:'in_process'}])).toEqual([]);
+});

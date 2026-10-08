@@ -14,3 +14,6 @@ test('excludes other years and campuses outside the supplied scope', () => {
   const rows = aggregateQuarters(campus.slice(0, 1), [report('2025-12-26', 90), report('2026-01-02', 10, 'b')], 2026);
   expect(rows.every(r => r.reports === 0 && r.attendance === null)).toBe(true);
 });
+test('excludes inactive campuses even if a directory supplies them',()=>{
+ expect(aggregateQuarters([{...campus[0],is_active:false,lifecycle_status:'inactive'}],[report('2026-04-03',99)],2026)).toEqual([]);
+});
