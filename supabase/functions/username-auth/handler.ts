@@ -7,7 +7,7 @@ export function createUsernameAuthHandler(deps:Dependencies){return async(reques
  const origin=request.headers.get('origin');const headers={'content-type':'application/json','cache-control':'no-store',vary:'Origin',...(origin&&origins.has(origin)?{'access-control-allow-origin':origin}:{})};
  const respond=(body:unknown,status=200)=>new Response(JSON.stringify(body),{headers,status});
  if(origin&&!origins.has(origin))return respond({error:'Origin is not allowed.'},403);
- if(request.method==='OPTIONS')return new Response(null,{status:204,headers:{...headers,'access-control-allow-methods':'POST, OPTIONS','access-control-allow-headers':'apikey, content-type, authorization'}});
+ if(request.method==='OPTIONS')return new Response(null,{status:204,headers:{...headers,'access-control-allow-methods':'POST, OPTIONS','access-control-allow-headers':'apikey, content-type, authorization, x-client-info'}});
  if(request.method!=='POST')return respond({error:'Use POST.'},405);
  if(request.headers.get('apikey')!==deps.publishableKey)return respond({error:'Invalid project key.'},401);
  let body:Record<string,unknown>;
