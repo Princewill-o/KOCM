@@ -5,14 +5,14 @@ const profile = (role: Profile['role'], status: Profile['status'] = 'active'): P
 const campuses: Campus[] = [{id:'own',name:'Own',region:'North',cluster_id:'north'},{id:'other',name:'Other',region:'London',cluster_id:'london'}];
 describe('workspace permissions', () => {
   it('exposes campus lead profiles only to active administrators', () => {
-    for (const role of ['admin', 'editor', 'cluster', 'campus'] as const) {
+    for (const role of ['admin', 'cluster', 'campus'] as const) {
       for (const status of ['active', 'pending', 'rejected'] as const) {
         expect(tabsFor(profile(role, status)).some(tab => tab.id === 'map')).toBe(role === 'admin' && status === 'active');
       }
     }
   });
   it('groups all accessible pages into at most five main destinations', () => {
-    for (const role of ['admin', 'editor', 'cluster', 'campus'] as const) {
+    for (const role of ['admin', 'cluster', 'campus'] as const) {
       const p = profile(role);
       for (const tab of tabsFor(p)) {
         const nav = navigationFor(p, tab.id);
@@ -50,12 +50,10 @@ describe('workspace permissions', () => {
     expect(tabsFor(profile('admin','pending')).map(t=>t.id)).toEqual(['profile']);
     expect(statsCampuses(profile('admin','pending'),campuses)).toEqual([]);
   });
-  it('editors see all campuses but cannot manage accounts', () => {
-    expect(statsCampuses(profile('editor'),campuses)).toEqual(campuses);
-    expect(tabsFor(profile('editor')).map(t=>t.id)).not.toContain('accounts');
-  });
 });
 
 it('excludes inactive and in-process campuses from statistic scopes',()=>{
  expect(statsCampuses(profile('admin'),[{...campuses[0],is_active:false,lifecycle_status:'inactive'}, {...campuses[1],is_active:false,lifecycle_status:'in_process'}])).toEqual([]);
 });
+
+it('denies removed or unknown roles rather than granting global access',()=>{const removed={...profile('campus'),role:'editor'} as unknown as Profile;expect(statsCampuses(removed,campuses)).toEqual([]);expect(tabsFor(removed).map(t=>t.id)).toEqual(['profile']);});

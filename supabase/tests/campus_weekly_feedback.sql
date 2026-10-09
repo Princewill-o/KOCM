@@ -11,7 +11,7 @@ begin
  saved:=public.submit_campus_weekly_feedback(week,a,request);
  if saved.campus_id<>campus or saved.submitter_name<>'Feedback Lead' or saved.answers ? 'tonguesRecipients' then raise exception 'Incorrect derived scope/identity or hidden answer';end if;
  if not saved.is_late or not (select is_late from public.reports where id=saved.report_id) then raise exception 'Campus lead late flag missing';end if;
- if (select count(*) from public.notifications where report_id=saved.report_id and kind='late_report')<>(select count(*) from public.profiles where role in('admin','editor') and status='active') then raise exception 'Campus lead late notification recipients differ';end if;
+ if (select count(*) from public.notifications where report_id=saved.report_id and kind='late_report')<>(select count(*) from public.profiles where role='admin' and status='active') then raise exception 'Campus lead late notification recipients differ';end if;
  if (select attendance from public.reports where id=saved.report_id)<>4 then raise exception 'Metrics not mapped';end if;
  if (public.submit_campus_weekly_feedback(week,a,request)).id<>saved.id then raise exception 'Idempotent retry failed';end if;
  begin perform public.submit_campus_weekly_feedback(week,jsonb_set(a,'{attendanceExcludingLead}','5'),request);raise exception 'Changed retry accepted';exception when sqlstate '22023' then null;end;

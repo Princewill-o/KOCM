@@ -22,7 +22,7 @@ export default function Materials({
     [busy, setBusy] = useState(false),
     [progress, setProgress] = useState(""),
     [selected, setSelected] = useState<Material | null>(null);
-  const canUpload = profile.role === "admin" || profile.role === "editor";
+  const canUpload = profile.role === "admin";
   const refresh = () =>
     listMaterials()
       .then(setRows)

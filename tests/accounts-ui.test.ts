@@ -4,7 +4,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('../lib/lead-applications',()=>({listLeadApplications:async()=>[]}));
 const mocks = vi.hoisted(() => ({ list:vi.fn(),save:vi.fn(),email:vi.fn(),deliveries:vi.fn(),deliver:vi.fn() }));
-vi.mock('../lib/koc', () => ({listProfiles:mocks.list,adminSetEmail:mocks.email,friendly:(e:Error) => e.message,ROLE_LABELS:{admin:'Administrator',editor:'Stats editor',campus:'Campus rep',cluster:'Cluster lead'}}));
+vi.mock('../lib/koc', () => ({listProfiles:mocks.list,adminSetEmail:mocks.email,friendly:(e:Error) => e.message,ROLE_LABELS:{admin:'Administrator',campus:'Campus rep',cluster:'Cluster lead'}}));
 vi.mock('../lib/platform', () => ({listClusters:() => Promise.resolve([{id:'north',name:'North',lead_name:'Naa'}])}));
 vi.mock('../lib/account-admin', async importOriginal => ({...await importOriginal<object>(),saveAccountAccess:mocks.save,listAccountEmailDeliveries:mocks.deliveries,deliverAccountEmails:mocks.deliver}));
 import Accounts from '../app/views/accounts';
@@ -35,10 +35,10 @@ describe('account administration controls', () => {
   it('preserves another account draft when saving an account', async () => {
     const other = {...applicant,id:'other',full_name:'Other'};
     mocks.list.mockResolvedValue([applicant,other]); await mount();
-    fireEvent.change(screen.getByLabelText('Role for Other'),{target:{value:'editor'}});
+    fireEvent.change(screen.getByLabelText('Role for Other'),{target:{value:'admin'}});
     fireEvent.click(screen.getAllByText('Approve')[0]);
     await screen.findByText("Applicant's access updated.");
-    expect((screen.getByLabelText('Role for Other') as unknown as {value:string}).value).toBe('editor');
+    expect((screen.getByLabelText('Role for Other') as unknown as {value:string}).value).toBe('admin');
   });
   it('preserves email editing when an email update fails', async () => {
     await mount();mocks.email.mockRejectedValue(new Error('Email update failed'));
@@ -49,3 +49,5 @@ describe('account administration controls', () => {
     expect(screen.getByLabelText('New email for Applicant')).toBeTruthy();
   });
 });
+
+it('does not offer a stats editor role',async()=>{await mount();expect(screen.queryByRole('option',{name:'Stats editor'})).toBeNull();});

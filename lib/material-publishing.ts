@@ -25,7 +25,7 @@ async function publisherId(): Promise<string> {
   const { data, error } = await client.auth.getUser();
   if (error || !data.user) throw new Error('Please log in before publishing.');
   const profile = checked<{ role: string }>(await client.from('profiles').select('role').eq('id', data.user.id).single());
-  if (!['admin', 'editor'].includes(profile.role)) throw new Error('Only material publishers can prepare documents.');
+  if (profile.role !== 'admin') throw new Error('Only material publishers can prepare documents.');
   return data.user.id;
 }
 async function renderProtectedPages(file: Blob, publisher: string, material: Material, progress?: Progress): Promise<Material> {

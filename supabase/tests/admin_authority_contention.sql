@@ -11,7 +11,7 @@ do $$ declare connection text:=format('dbname=%L host=127.0.0.1 port=%s user=%L'
  perform dblink_connect('authority_waiter',connection);
  perform dblink_exec('authority_blocker','begin');
  perform dblink_exec('authority_blocker','do $remote$ begin perform pg_advisory_xact_lock(73612061); end $remote$');
- perform dblink_exec('authority_blocker',$remote$update public.profiles set role='editor' where id='a0000000-0000-0000-0000-000000000002'$remote$);
+ perform dblink_exec('authority_blocker',$remote$update public.profiles set role='campus',status='pending',campus_id=null where id='a0000000-0000-0000-0000-000000000002'$remote$);
  perform dblink_exec('authority_waiter',$remote$set request.jwt.claim.sub='a0000000-0000-0000-0000-000000000002'$remote$);
  perform dblink_exec('authority_waiter','set role authenticated');
  perform dblink_send_query('authority_waiter',$remote$select (public.admin_update_user('a0000000-0000-0000-0000-000000000003',p_full_name=>'Forbidden queued edit')).id::text$remote$);

@@ -37,7 +37,7 @@ describe('materials protected publishing and reading', () => {
   it('publishers can prepare an existing material and see progress until completion', async () => {
     let finish!: () => void;
     mocks.prepare.mockImplementation((_material, progress) => { progress('Protecting page 1 of 2…'); return new Promise<void>(resolve => { finish = resolve; }); });
-    mount('editor');
+    mount('admin');
     fireEvent.click(await screen.findByRole('button', { name: 'Prepare protected copy' }));
     expect(await screen.findByRole('status')).toHaveProperty('textContent', 'Protecting page 1 of 2…');
     expect(mocks.prepare).toHaveBeenCalledWith(material, expect.any(Function));
@@ -63,3 +63,5 @@ describe('materials protected publishing and reading', () => {
     await waitFor(() => expect(screen.queryByRole('status')).toBeNull());
   });
 });
+
+it('removed editor accounts have no publishing controls',async()=>{mount('editor');await screen.findByText('Teaching');expect(screen.queryByRole('button',{name:'Prepare protected copy'})).toBeNull();expect(screen.queryByRole('heading',{name:'Upload material'})).toBeNull();});

@@ -2,7 +2,7 @@
 import { supabase } from './supabase';
 import type { Season } from './reporting';
 
-export type Role = 'admin' | 'editor' | 'campus' | 'cluster';
+export type Role = 'admin' | 'campus' | 'cluster';
 export type Status = 'pending' | 'active' | 'rejected';
 export type Profile = {
   id: string;
@@ -67,8 +67,8 @@ export type ReportInput = {
   campusId?: string | null;
 };
 
-export const ROLE_LABELS: Record<Role, string> = { admin: 'Administrator', editor: 'Stats editor', campus: 'Campus rep', cluster: 'Cluster lead' };
-export const canSeeAllCampuses = (p: Profile | null) => !!p && p.status === 'active' && (p.role === 'admin' || p.role === 'editor');
+export const ROLE_LABELS: Record<Role, string> = { admin: 'Administrator', campus: 'Campus rep', cluster: 'Cluster lead' };
+export const canSeeAllCampuses = (p: Profile | null) => !!p && p.status === 'active' && p.role === 'admin';
 
 /** Turn Supabase/Postgres errors into short, human messages. */
 export function friendly(error: unknown): string {

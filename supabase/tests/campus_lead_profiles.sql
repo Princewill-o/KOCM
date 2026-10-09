@@ -31,11 +31,11 @@ do $$ begin
  begin update public.profiles set phone='123456789' where id='91000000-0000-0000-0000-000000000003';raise exception 'Direct profile detail write allowed';exception when insufficient_privilege then null;end;
 end $$;
 reset role;
-update public.profiles set role='editor',campus_id=null where id='91000000-0000-0000-0000-000000000003';
+update public.profiles set role='campus',status='pending',campus_id=null where id='91000000-0000-0000-0000-000000000003';
 select set_config('request.jwt.claim.sub','91000000-0000-0000-0000-000000000003',true);
 set local role authenticated;
 do $$ begin
- begin perform public.campus_lead_profiles();raise exception 'Editor accessed leader contacts';exception when insufficient_privilege then null;end;
+ begin perform public.campus_lead_profiles();raise exception 'Pending unassigned accessed leader contacts';exception when insufficient_privilege then null;end;
 end $$;
 reset role;
 select pg_temp.assert_true((select phone is null from public.profiles where id='91000000-0000-0000-0000-000000000003'),'other person unchanged');

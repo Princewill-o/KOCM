@@ -3,7 +3,7 @@ begin;
 create function pg_temp.assert_true(value boolean, message text) returns void language plpgsql as $$ begin if value is distinct from true then raise exception 'Assertion failed: %',message; end if; end $$;
 insert into auth.users(id,email,raw_app_meta_data) values
  ('10000000-0000-0000-0000-000000000001','admin@example.test','{"koc_role":"admin"}'),
- ('10000000-0000-0000-0000-000000000002','editor@example.test','{"koc_role":"editor"}'),
+ ('10000000-0000-0000-0000-000000000002','second-admin@example.test','{"koc_role":"admin"}'),
  ('10000000-0000-0000-0000-000000000003','campus@example.test','{}'),
  ('10000000-0000-0000-0000-000000000004','cluster@example.test','{}');
 update public.profiles set role='campus',status='active',campus_id=(select id from public.campuses where name='Brunel') where id='10000000-0000-0000-0000-000000000003';

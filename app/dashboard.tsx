@@ -12,7 +12,6 @@ import type { Season } from '@/lib/reporting';
 import Overview from './views/overview';
 import CampusView from './views/campus-view';
 import CampusNetwork from './views/campus-network';
-import ReportForm from './views/report-form';
 import AdminReportForms from './views/admin-report-forms';
 import CampusWeeklyForm from './views/campus-weekly-form';
 import CampusFeedbackRecords from './views/campus-feedback-records';
@@ -166,7 +165,6 @@ export default function Dashboard() {
           {tab === 'campus' && !!visibleCampuses.length && <CampusView key={campusId} season={season} profile={profile} campuses={visibleCampuses} campusId={campusId} setCampusId={setCampusId} jump={jump} />}
           {tab === 'enter' && profile.role === 'cluster' && <><ClusterReportForm key={weekEnding} profile={profile} campuses={visibleCampuses} season={season} initialWeek={weekEnding || undefined} /><ClusterReportRecords campuses={visibleCampuses} /></>}
           {tab === 'enter' && profile.role === 'admin' && <AdminReportForms key={weekEnding} season={season} profile={profile} campuses={visibleCampuses} clusters={clusters} campusId={campusId} setCampusId={setCampusId} initialWeek={weekEnding || undefined} />}
-          {tab === 'enter' && profile.role === 'editor' && <ReportForm season={season} profile={profile} campuses={visibleCampuses} campusId={campusId} setCampusId={setCampusId} initialWeek={weekEnding} />}
           {tab === 'enter' && profile.role !== 'cluster' && profile.role !== 'campus' && <ClusterReportRecords campuses={visibleCampuses} />}
           {tab === 'enter' && profile.role === 'campus' && <CampusWeeklyForm season={season} profile={profile} campuses={visibleCampuses} campusId={campusId} setCampusId={setCampusId} initialWeek={weekEnding} />}
           {tab === 'enter' && <CampusFeedbackRecords campusId={profile.role === 'campus' ? profile.campus_id ?? undefined : undefined} />}

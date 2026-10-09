@@ -3,6 +3,7 @@ import { supabase } from './supabase';
 export type AccessDraft = { role: Role; status: Status; campusId: string; clusterId: string; reason: string };
 export const accessDraft = (user: Profile): AccessDraft => ({role:user.role,status:user.status,campusId:user.campus_id ?? '',clusterId:user.cluster_id ?? '',reason:user.rejection_reason ?? ''});
 export function validateAccessDraft(draft: AccessDraft): string | null {
+  if (!['admin','campus','cluster'].includes(draft.role)) return 'Choose an administrator, campus or cluster role.';
   if (draft.role === 'campus' && !draft.campusId) return 'Choose a university for this campus account.';
   if (draft.role === 'cluster' && !draft.clusterId) return 'Choose a cluster for this cluster lead.';
   if (draft.status === 'rejected' && !draft.reason.trim()) return 'Enter a reason for declining or blocking access.';

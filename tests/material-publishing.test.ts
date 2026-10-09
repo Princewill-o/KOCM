@@ -36,7 +36,7 @@ describe('publisher boundaries', () => {
     expect(client.storage.from).not.toHaveBeenCalled();
   });
   it('rejects excessive pages before rendering or finalizing and destroys PDF resources', async () => {
-    const client = mockClient('editor');
+    const client = mockClient('admin');
     const destroy = vi.fn().mockResolvedValue(undefined);
     const getPage = vi.fn();
     pdfMock.getDocument.mockReturnValue({ promise: Promise.resolve({ numPages: 101, getPage }), destroy });
@@ -79,3 +79,5 @@ it('publishes only after every page is registered and archives failed preparatio
     expect(update).toHaveBeenCalledWith({ is_active: false });
   } finally { vi.unstubAllGlobals(); }
 });
+
+it('removed editor role cannot download sources or prepare protected copies',async()=>{const client=mockClient('editor');await expect(prepareProtectedMaterial(material)).rejects.toThrow('publishers');expect(client.storage.from).not.toHaveBeenCalled();});

@@ -21,12 +21,12 @@ export function statsCampuses(profile: Profile, campuses: Campus[]) {
   campuses = campuses.filter(c=>c.is_active !== false && (!c.lifecycle_status || c.lifecycle_status === 'active'));
   if (profile.role === 'campus') return campuses.filter(c => c.id === profile.campus_id);
   if (profile.role === 'cluster') return campuses.filter(c => !!profile.cluster_id && c.cluster_id === profile.cluster_id);
-  return campuses;
+  return profile.role === 'admin' ? campuses : [];
 }
 export function tabsFor(p: Profile): { id: Tab; label: string }[] {
-  if (p.status !== 'active') return [{id:'profile',label:'My profile'}];
+  if (p.status !== 'active' || !['admin','campus','cluster'].includes(p.role)) return [{id:'profile',label:'My profile'}];
   return [
-    ...(p.role === 'admin' || p.role === 'editor' ? [{id:'overview' as Tab,label:'Overview'}] : []),
+    ...(p.role === 'admin' ? [{id:'overview' as Tab,label:'Overview'}] : []),
     {id:'campus',label:p.role === 'campus' ? 'My campus' : p.role === 'cluster' ? 'My cluster' : 'Campuses'},
     {id:'enter',label:p.role === 'cluster' ? 'Cluster report' : 'Weekly report'},
     ...(p.role !== 'campus' ? [{id:'quarters' as Tab,label:'Quarterly trends'}] : []),

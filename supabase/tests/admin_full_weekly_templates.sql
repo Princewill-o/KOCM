@@ -17,9 +17,9 @@ begin
  a:=jsonb_build_object('sessionDate',week::text,'startTime','18:00','endTime','19:00','lesson','Week 1: Prayer','attendanceExcludingLead',4,'firstTimers',1,'bornAgain',0,'prayerMinutes',30,'prayerWalk','no','holyGhostBaptism','no','tonguesRecipients',999,'evangelismDatesTimes','Thursday 12pm','evangelismMinutes',20,'evangelismZeroReason','','soulsWon',0,'contactsTaken',2,'contactsAttendedFellowship',1,'homeVisits',0,'churchAttendeesExcludingCore',2,'churchAttendeesIncludingCore',4,'churchFirstTimers',0,'overallServing',1,'newDepartmentJoiners',0,'outreachOutings',1,'incidentNotes','Incident detail','lateReason','Test submitted later');
  feedback:=public.submit_campus_weekly_feedback(week,a,request,campus);
  if not feedback.is_late or not (select is_late from public.reports where id=feedback.report_id) then raise exception 'Admin campus late status missing';end if;
- if (select count(*) from public.notifications where report_id=feedback.report_id and kind='late_report' and recipient_id in(admin_id,editor_id))<>2 then raise exception 'Admin campus late alert missing overall recipients';end if;
+ if (select count(*) from public.notifications where report_id=feedback.report_id and kind='late_report' and recipient_id=admin_id)<>1 then raise exception 'Admin campus late alert missing overall recipients';end if;
  if feedback.campus_id<>campus or feedback.submitted_by<>admin_id or feedback.submitter_name<>'Actual Administrator' then raise exception 'Admin campus submission impersonated lead or wrong entity';end if;
- if (select count(*) from public.notifications where report_id=feedback.report_id and kind='late_report')<>(select count(*) from public.profiles where role in('admin','editor') and status='active') then raise exception 'Late campus retry duplicated notifications';end if;
+ if (select count(*) from public.notifications where report_id=feedback.report_id and kind='late_report')<>(select count(*) from public.profiles where role='admin' and status='active') then raise exception 'Late campus retry duplicated notifications';end if;
  if (public.submit_campus_weekly_feedback(week,a,request,campus)).id<>feedback.id then raise exception 'Admin retry duplicated campus snapshot';end if;
  begin perform public.submit_campus_weekly_feedback(week,a,request,other_campus);raise exception 'Campus target changed on retry';exception when insufficient_privilege then null;end;
  r:=public.submit_cluster_report('{"scope":"cluster","areas":["session"],"session":"no"}',request,week,cluster);
@@ -35,8 +35,8 @@ begin
  if not r.is_late or r.submitted_by<>cluster_lead or not exists(select 1 from public.notifications where cluster_report_id=r.id and recipient_id=admin_id and title='Late cluster report submitted') then raise exception 'Cluster lead late submission alert missing';end if;
  begin perform public.submit_cluster_report('{"scope":"cluster","areas":["session"],"session":"no"}',gen_random_uuid(),week,other_cluster);raise exception 'Cluster lead targeted other cluster';exception when insufficient_privilege then null;end;
  perform set_config('request.jwt.claim.sub',editor_id::text,true);
- begin perform public.submit_campus_weekly_feedback(week,a,gen_random_uuid(),campus);raise exception 'Editor full campus template allowed';exception when insufficient_privilege then null;end;
- begin perform public.submit_cluster_report('{"scope":"cluster","areas":["session"],"session":"no"}',gen_random_uuid(),week,cluster);raise exception 'Editor cluster template allowed';exception when insufficient_privilege then null;end;
+ begin perform public.submit_campus_weekly_feedback(week,a,gen_random_uuid(),campus);raise exception 'Pending unassigned full campus template allowed';exception when insufficient_privilege then null;end;
+ begin perform public.submit_cluster_report('{"scope":"cluster","areas":["session"],"session":"no"}',gen_random_uuid(),week,cluster);raise exception 'Pending unassigned cluster template allowed';exception when insufficient_privilege then null;end;
  perform set_config('request.jwt.claim.sub',admin_id::text,true);
  begin perform public.submit_campus_weekly_feedback(week,jsonb_set(a,'{attendanceExcludingLead}','-1'),gen_random_uuid(),campus);raise exception 'Admin bypassed campus validation';exception when sqlstate '22023' then null;end;
  begin perform public.submit_cluster_report('{"scope":"cluster","areas":["prayer"],"prayer":"yes"}',gen_random_uuid(),week,cluster);raise exception 'Admin bypassed required cluster answers';exception when sqlstate '22023' then null;end;
