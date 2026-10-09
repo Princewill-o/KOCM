@@ -1,4 +1,4 @@
-.landing-brand img.brand-mark,.brand img.brand-mark,.auth-brand img.brand-mark{filter:url("/brand-light-filter.svg#black-lettering");}
+.landing-brand img.brand-mark,.brand img.brand-mark,.auth-brand img.brand-mark{filter:brightness(0) drop-shadow(2px 0 0 #fff) drop-shadow(-2px 0 0 #fff) drop-shadow(0 2px 0 #fff) drop-shadow(0 -2px 0 #fff);}
 .landing-brand img.brand-mark,.brand img.brand-mark,.auth-brand img.brand-mark{display:block;object-fit:contain;width:82px;height:58px}
 .auth-brand img.brand-mark{width:112px;height:82px}
 .dark .landing-brand img.brand-mark,.brand img.brand-mark,.auth-brand img.brand-mark{filter:none}
