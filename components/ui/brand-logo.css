@@ -1,4 +1,4 @@
-.brand-mark{filter:url("/brand-light-filter.svg#black-lettering") drop-shadow(1px 0 0 white) drop-shadow(-1px 0 0 white) drop-shadow(0 1px 0 white) drop-shadow(0 -1px 0 white);}
+.brand-mark{filter:url("/brand-light-filter.svg#black-lettering");}
 .landing-brand img.brand-mark,.brand img.brand-mark,.auth-brand img.brand-mark{display:block;object-fit:contain;width:82px;height:58px}
 .auth-brand img.brand-mark{width:112px;height:82px}
 .dark .brand-mark{filter:none}

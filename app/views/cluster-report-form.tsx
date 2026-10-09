@@ -6,10 +6,11 @@ import {buildWeeks,formatDate,type Season} from '@/lib/reporting';
 import type { Campus, Profile } from '@/lib/koc';
 import { clusterAreas, sanitizeClusterDraft, validateClusterDraft, visibleQuestions, type ClusterDraft, type ClusterQuestion } from '@/lib/cluster-report-form';
 
-type Props = { profile: Profile; campuses: Campus[]; season?:Season; initialWeek?:string; clusters?: { id: string; name: string }[] };
-export default function ClusterReportForm({ profile, campuses, season, initialWeek, clusters = [] }: Props) {
-  const ownCampuses = campuses.filter(c => Boolean(profile.cluster_id) && c.cluster_id === profile.cluster_id);
-  const clusterName = clusters.find(c => c.id === profile.cluster_id)?.name ?? ownCampuses[0]?.region ?? 'Your assigned cluster';
+type Props = { profile: Profile; campuses: Campus[]; season?:Season; initialWeek?:string; clusterId?:string; clusters?: { id: string; name: string }[] };
+export default function ClusterReportForm({ profile, campuses, season, initialWeek, clusterId, clusters = [] }: Props) {
+  const targetClusterId = profile.role === 'admin' ? clusterId : profile.cluster_id;
+  const ownCampuses = campuses.filter(c => Boolean(targetClusterId) && c.cluster_id === targetClusterId && c.is_active !== false && !['inactive','in_process'].includes(c.lifecycle_status ?? 'active'));
+  const clusterName = clusters.find(c => c.id === targetClusterId)?.name ?? ownCampuses[0]?.region ?? 'Your assigned cluster';
   const weeks = season ? buildWeeks(season, []).filter(w => w.status !== 'upcoming') : [];
   const [weekEnding,setWeekEnding] = useState(initialWeek ?? weeks.at(-1)?.weekEnding ?? '');
   const [draft, setDraft] = useState<ClusterDraft>({ scope: 'cluster', campusId: '', areas: [] });
@@ -25,7 +26,7 @@ export default function ClusterReportForm({ profile, campuses, season, initialWe
     submitting.current = true; setBusy(true); setSubmitError('');
     try {
       requestId.current ??= crypto.randomUUID();
-      const result = await submitClusterReport(sanitizeClusterDraft(draft), requestId.current, weekEnding || undefined);
+      const result = await submitClusterReport(sanitizeClusterDraft(draft), requestId.current, weekEnding || undefined, profile.role === 'admin' ? targetClusterId ?? undefined : undefined);
       setSaved(result);
     } catch (e) {
       setSubmitError(e instanceof Error ? e.message : 'Unable to submit the report. Please try again.');
@@ -54,7 +55,7 @@ export default function ClusterReportForm({ profile, campuses, season, initialWe
     <h2>Cluster report</h2>
     <p>Review your answers before submitting. Draft answers are not saved automatically.</p>
     <p>Use this form to review activity and concerns in your cluster. Questions marked * are required for review.</p>
-    <p><strong>Cluster lead:</strong> {profile.full_name}<br /><strong>Cluster:</strong> {clusterName}</p>
+    <p><strong>{profile.role === 'admin' ? 'Submitted by:' : 'Cluster lead:'}</strong> {profile.full_name}<br /><strong>Cluster:</strong> {clusterName}</p>
     {saved ? <div role="status"><h3>Report submitted</h3><p>Your report has been saved for your administrators to review.</p><p>Report reference: {saved.id}</p><button type="button" className="button button-yellow" onClick={newReport}>Start a new report</button></div> : review ? <div><h3>Review your answers</h3>{weekEnding && <p><strong>Reporting week:</strong> {formatDate(weekEnding)}</p>}<p><strong>Scope:</strong> {draft.scope === 'cluster' ? 'Whole cluster' : 'Individual campus'}</p><p><strong>Campus:</strong> {ownCampuses.find(c => c.id === draft.campusId)?.name ?? 'N/A'}</p>{clusterAreas.filter(a => (draft.areas as string[]).includes(a.id)).map(area => <section key={area.id} style={{ marginTop: 24 }}><h3>{area.title}</h3><p>{draft[area.id] === 'yes' ? 'Yes' : draft[area.id] === 'no' ? 'No' : 'Not answered'}</p><dl>{visibleQuestions(draft, area).map(q => <div key={q.id} style={{ marginBottom: 12 }}><dt><strong>{q.label}</strong></dt><dd style={{ margin: 0, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{draft[q.id] ? String(draft[q.id]) : 'Not answered'}</dd></div>)}</dl></section>)}<button type="button" className="button button-yellow" disabled={busy} onClick={() => { setReview(false); setSubmitError(''); }}>Back to edit</button> <button type="button" className="button button-yellow" disabled={busy} onClick={submit}>{busy ? 'Submitting…' : 'Submit report'}</button>{submitError && <p role="alert">{submitError}</p>}</div> : <div>
       {season && <div style={{marginBottom:18}}><label htmlFor="cluster-report-week">Reporting week *</label><select id="cluster-report-week" className="input" value={weekEnding} onChange={e=>{setWeekEnding(e.target.value);setReview(false);requestId.current=null;setErrors({});}}>{[...weeks].reverse().map(w=><option key={w.weekEnding} value={w.weekEnding}>{formatDate(w.weekEnding)}</option>)}</select><p>Due Friday at 10pm UK time. A whole-cluster report completes your weekly reporting; an individual-campus review is additional feedback.</p>{error('weekEnding')}</div>}
       <div><label htmlFor="cluster-report-scope">Report scope *</label><select id="cluster-report-scope" className="input" value={String(draft.scope)} onChange={e => change('scope', e.target.value)}><option value="cluster">Whole cluster</option><option value="campus">Individual campus</option></select>{error('scope')}</div>

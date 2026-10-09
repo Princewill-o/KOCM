@@ -10,12 +10,18 @@ begin
  a:=jsonb_build_object('sessionDate',week::text,'startTime','18:00','endTime','19:00','lesson','Week 1: Prayer','attendanceExcludingLead',4,'firstTimers',1,'bornAgain',0,'prayerMinutes',30,'prayerWalk','no','holyGhostBaptism','no','tonguesRecipients',999,'evangelismDatesTimes','Thursday 12pm','evangelismMinutes',20,'evangelismZeroReason','','soulsWon',0,'contactsTaken',2,'contactsAttendedFellowship',1,'homeVisits',0,'churchAttendeesExcludingCore',2,'churchAttendeesIncludingCore',4,'churchFirstTimers',0,'overallServing',1,'newDepartmentJoiners',0,'outreachOutings',1,'incidentNotes','Incident detail','lateReason','Test submitted later');
  saved:=public.submit_campus_weekly_feedback(week,a,request);
  if saved.campus_id<>campus or saved.submitter_name<>'Feedback Lead' or saved.answers ? 'tonguesRecipients' then raise exception 'Incorrect derived scope/identity or hidden answer';end if;
+ if not saved.is_late or not (select is_late from public.reports where id=saved.report_id) then raise exception 'Campus lead late flag missing';end if;
+ if (select count(*) from public.notifications where report_id=saved.report_id and kind='late_report')<>(select count(*) from public.profiles where role in('admin','editor') and status='active') then raise exception 'Campus lead late notification recipients differ';end if;
  if (select attendance from public.reports where id=saved.report_id)<>4 then raise exception 'Metrics not mapped';end if;
  if (public.submit_campus_weekly_feedback(week,a,request)).id<>saved.id then raise exception 'Idempotent retry failed';end if;
  begin perform public.submit_campus_weekly_feedback(week,jsonb_set(a,'{attendanceExcludingLead}','5'),request);raise exception 'Changed retry accepted';exception when sqlstate '22023' then null;end;
  begin perform public.submit_campus_weekly_feedback(week,jsonb_set(a,'{contactsTaken}','-1'),gen_random_uuid());raise exception 'Negative accepted';exception when sqlstate '22023' then null;end;
  begin perform public.submit_campus_weekly_feedback(week,a||jsonb_build_object('campusId',gen_random_uuid()),gen_random_uuid());raise exception 'Foreign campus accepted';exception when sqlstate '22023' then null;end;
  begin perform public.submit_campus_weekly_feedback(week,jsonb_set(a,'{lateReason}','""'),gen_random_uuid());raise exception 'Missing late reason accepted';exception when sqlstate '22023' then null;end;
+ -- A prior submission ID must not bypass current assignment isolation after a transfer.
+ update public.profiles set campus_id=(select id from public.campuses where is_active and id<>campus limit 1) where id=me;
+ begin perform public.submit_campus_weekly_feedback(week,a,request);raise exception 'Previous campus feedback disclosed by retry';exception when insufficient_privilege then null;end;
+ update public.profiles set campus_id=campus where id=me;
  perform set_config('request.jwt.claim.sub',foreign_user::text,true);
  begin perform public.submit_campus_weekly_feedback(week,a,gen_random_uuid());raise exception 'Pending account accepted';exception when insufficient_privilege then null;end;
  perform set_config('request.jwt.claim.sub',me::text,true);update public.campuses set is_active=false where id=campus;

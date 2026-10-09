@@ -29,7 +29,7 @@ export function createGraceChatHandler(deps:Dependencies){return async(request:R
   const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(`${ip.slice(0,100)}:${clientId}`));
   const identity=Array.from(new Uint8Array(digest),byte=>byte.toString(16).padStart(2,'0')).join('');
   if(!await deps.claim(identity))return fallback('Grace has reached its free AI allowance. Here is a verified FAQ answer.');
-  const result=await deps.complete(message.trim(),history as GraceHistory[]);
+  const result=await deps.complete(message.trim(),history.map(item=>({role:item.role as GraceHistory['role'],content:item.content as string})));
   if(!result||typeof result!=='object')throw new Error();const {answer,faqId}=result as Record<string,unknown>;
   if(typeof answer!=='string'||!answer.trim()||answer.length>1800||(faqId!==undefined&&faqId!==null&&(typeof faqId!=='string'||!GRACE_FAQS.some(faq=>faq.id===faqId))))throw new Error();
   return response({answer:answer.trim(),...(typeof faqId==='string'?{faqId}:{}),mode:'ai'} satisfies GraceReply);

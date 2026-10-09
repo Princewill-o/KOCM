@@ -8,7 +8,7 @@ Administrators' main overview supports persisted academic years, mid-year report
 
 - **Frontend:** Next.js (vinext on Vite), React 19, shadcn/ui.
 - **Backend:** Supabase project **Kharis** (`yrqkafiqwllkphroztqk`, London region).
-  - **Supabase Auth** handles password authentication and sessions (secure cookies). The checked `username-auth` Edge Function adds username-only registration and username/email sign-in.
+  - **Supabase Auth** handles password authentication and sessions (secure cookies). The checked `username-auth` Edge Function provides username/email sign-in and checked account operations. Public leadership requests use a separate unauthenticated form and do not create accounts.
   - **Postgres + row level security** decide what each person can see. The browser never gets more data than its role allows.
   - Checked database functions (`submit_report`, `admin_update_user`, …), column grants and row level security validate writes and isolate campus data.
 - Schema, security rules and functions: `supabase/migrations/`.
@@ -52,7 +52,7 @@ The Supabase URL and publishable key are in `lib/supabase.ts` (they are safe to 
 
 ## Adding accounts
 
-- **Campus reps:** they sign up at `/signup` with a username, name, university and password, then an admin approves them under **Accounts**. Email is optional.
+- **Campus leadership requests:** `/signup` is a public application form with the full leadership questions, optional contact email and a required clear face photo. No login, username or password is needed. Applicants review before submitting and receive a reference only after confirmed persistence. Administrators review the request separately from creating or approving account access.
 - **Admins / stats editors:** create the user in Supabase (Authentication → Users → Add user, tick *Auto confirm*). They appear under **Accounts → Pending** with no access; an admin approves them and picks their role.
 
 ## Campus workflows
@@ -63,9 +63,9 @@ The Supabase URL and publishable key are in `lib/supabase.ts` (they are safe to 
 - **Quarterly trends:** leadership and cluster accounts compare attendance, prayer, evangelism and outings by calendar quarter across seasons. Unreported data stays unknown.
 - **Materials:** admin/editor accounts upload private PDFs up to 20 MiB and 100 pages, for all campuses or one campus. Publishers prepare bounded PNG reading pages before publication. Campus/cluster accounts cannot access either original PDFs or clean page files. The `protected-material-page` Supabase Edge Function checks authorisation for every page, permanently stamps a subtle KOC logo in the bottom-right corner of the image, and delivers only that page with no-store headers. Sessions expire after 15 minutes; page/session limits and private audit records deter bulk extraction. The canvas reader clears on focus loss, print/capture shortcuts and inactivity, with explicit resume. Operating-system screenshots, recording and photographing a screen cannot be reliably blocked. See [protected material deployment and contracts](supabase/PROTECTED_MATERIALS.md).
 - **Campus lead profiles:** active administrators can select a university on the UK map or searchable directory to review its assigned lead and open campus statistics. Unknown locations remain in the directory. Contact details are protected by an admin-only RPC. Each campus has at most one active campus lead; statistics stay with the campus when its lead changes. Pending applicants may share a requested campus until approval. Leads can update their own phone, course, study year and biography through a checked self-service RPC.
-- **Landing page:** university interest/account requests and existing member sign-in.
+- **Landing page:** public campus leadership requests and existing member sign-in.
 
-Clusters follow the existing campus region data: London (Modupe), Midlands (Elyon), South (Lindsay), North (Naa), South East (Zipporah), West (Chiedza). Existing `West England` campuses map to West. `Colleges` remains unassigned. Campus registration uses usernames; verified email is optional for notifications and recovery. An administrator approves and assigns campus or cluster access under Accounts. Named cluster leads are a roster, not fabricated login accounts.
+Clusters follow the existing campus region data: London (Modupe), Midlands (Elyon), South (Lindsay), North (Naa), South East (Zipporah), West (Chiedza). Existing `West England` campuses map to West. `Colleges` remains unassigned. Existing campus accounts use usernames; verified email is optional for notifications and recovery. An administrator approves and assigns campus or cluster access under Accounts. Named cluster leads are a roster, not fabricated login accounts.
 
 See [database contracts and test instructions](supabase/WORKFLOWS.md). New migrations are in `supabase/migrations`; keep them in sync with the connected project before publishing the frontend.
 
@@ -75,13 +75,13 @@ See [DESIGN.md](DESIGN.md) for the interface foundations and editable Figma refe
 
 ## Account administration and report records
 
-Administrators use **Accounts & access** to approve or decline applications and explicitly save role/status/scope changes. Campus and cluster assignments are required for those roles. Decisions are audited privately; the database serialises access changes to preserve at least one active administrator. Declining an application queues a rejection email with the administrator’s reason; repeat saves do not duplicate a decision. Later approval cancels unsent rejection jobs.
+Administrators review public leadership requests with **Approve request** or **Reject request**; these decisions do not create accounts or grant access. Face photos are kept in a private storage bucket and loaded only through short-lived, administrator-authorized signed URLs. Older applications without photos remain readable. Separately, administrators use **Accounts & access** to approve or decline account access and explicitly save role/status/scope changes. Campus and cluster assignments are required for those roles. Decisions are audited privately; the database serialises access changes to preserve at least one active administrator. Declining an application queues a rejection email with the administrator’s reason; repeat saves do not duplicate a decision. Later approval cancels unsent rejection jobs.
 
 Rejection and reporting email delivery use the `account-email-delivery` Edge Function. Configure `SMTP_HOST`, `SMTP_PORT=465`, `SMTP_USER`, `SMTP_PASSWORD` and `SMTP_FROM` in Supabase Edge Function secrets. Use a verified sender and implicit TLS; hosted Supabase blocks outgoing ports 25 and 587. No credentials belong in frontend variables or source control. Missing configuration leaves messages queued. The UI shows pending/sending/sent/failed/cancelled states and permits explicit retry. Sent means SMTP accepted the recipient, not guaranteed inbox delivery. Each batch claims at most three messages; failed attempts have a one-minute backoff and a five-attempt cap. A ten-minute lease permits recovery after interrupted delivery; SMTP cannot guarantee exactly-once delivery if sending succeeds before recording the result. The database scheduler retries deliverable queued messages every 15 minutes.
 
 The explicitly requested `okubep@gmail.com` account has a one-time, seven-day admin invitation bound to its Auth UUID. Its admin role stays pending until Supabase verifies the email. The confirmation link opens `/update-password` to let the owner choose their password. Other signups cannot grant themselves admin via user-editable metadata.
 
-Administrators can download a saved weekly report from **Campuses → weekly reports → PDF**. The PDF includes campus/cluster, reporting season, all submitted metrics and notes, submitter UUID, exact timestamps and late status. The record reflects the latest saved report; the audit retains earlier changes. PDF export uses only reports returned by the existing scoped queries. Cluster leads submit the same campus report format within their assigned cluster; administrators see those records immediately.
+Administrators can download a saved weekly report from **Campuses → weekly reports → PDF**. The PDF includes campus/cluster, reporting season, all submitted metrics and notes, submitter UUID, exact timestamps and late status. The record reflects the latest saved report; the audit retains earlier changes. PDF export uses only reports returned by the existing scoped queries. Cluster leads submit the conditional cluster report within their assigned cluster; administrators see those records immediately.
 
 ### Friday leadership emails
 
@@ -91,11 +91,11 @@ The scheduler credential is generated server-side and encrypted in Supabase Vaul
 
 ## Password recovery
 
-The hosted Auth Site URL is `https://kocm.vercel.app`. Exact `/update-password` and `/dashboard` redirect URLs are configured for the two existing Vercel sites and localhost:5173. Recovery requests redirect to the current app’s `/update-password`; the browser waits for Supabase’s callback/session exchange before showing the new-password form. Invalid or expired callbacks offer a new-link action. Open PKCE recovery links in the same browser that requested them, and use the newest email. App signup/reset forms require at least 12 characters. Never record or commit account passwords.
+The hosted Auth Site URL is `https://kocm.vercel.app`. Exact `/update-password` and `/dashboard` redirect URLs are configured for the two existing Vercel sites and localhost:5173. Recovery requests redirect to the current app’s `/update-password`; the browser waits for Supabase’s callback/session exchange before showing the new-password form. Invalid or expired callbacks offer a new-link action. Open PKCE recovery links in the same browser that requested them, and use the newest email. Account password creation/reset forms require at least 12 characters. Never record or commit account passwords.
 
 ### Grace and landing components
 
-The public page includes an Apply here signup link, liquid glass buttons, animated marker underlines and a manual community photo slider. The slider supports previous/next, direct selection, arrow keys and swipe; animations respect reduced-motion preferences.
+The public page includes an Apply here request link, liquid glass buttons, animated marker underlines and a manual community photo slider. The slider supports previous/next, direct selection, arrow keys and swipe; animations respect reduced-motion preferences.
 
 Grace uses the `grace-chat` Supabase Edge Function to call Groq’s `openai/gpt-oss-20b` model with public KOC guidance and a short conversation history. Suggested questions use the verified FAQ bank directly. The UI labels AI replies and FAQ fallbacks honestly; missing configuration, quota exhaustion and provider errors leave the FAQ assistant usable. Grace has no access to private campus records and cannot approve accounts, reset passwords or submit reports. Chat history stays in component memory and clears on reload; model requests send the entered message and recent conversation to Groq.
 
@@ -111,7 +111,7 @@ Admins/editors read saved records under **Campuses → Weekly report → Submitt
 
 ## Usernames and optional email
 
-Sign-in accepts a username or an existing real account email. The public signup page creates a pending campus account and detailed lead application through the `lead-application` Edge Function; Supabase holds an opaque internal identifier that is never shown as a contact email or used for outbound mail. Usernames are unique, case-insensitive, and use 3–30 letters, numbers or underscores. Members choose/change their username in My profile. Existing email logins keep working.
+Sign-in accepts a username or an existing real account email. The public `/signup` page submits a leadership request through the `lead-application` Edge Function without creating an Auth account. Existing username-only accounts have an opaque internal identifier that is never shown as a contact email or used for outbound mail. Usernames are unique, case-insensitive, and use 3–30 letters, numbers or underscores. Members choose/change their username in My profile. Existing email logins keep working.
 
 An account without real email can sign in and receive in-app alerts. Email notifications and password recovery need a verified real address. Adding an email to a username-only account requires its current password and a confirmation link delivered through configured SMTP. Missing sender configuration returns an explicit error without changing identity. The server confirms only the inaccessible internal identifier, never the user's new email. Existing real-email changes retain Supabase's native confirmation flow. No global confirmation setting is weakened.
 
@@ -135,3 +135,13 @@ A confirmed submission stores an immutable `campus_weekly_feedback` snapshot and
 Every saved application notifies active administrators in-app and appears under Accounts & access and its chosen university's Campus lead profile. Application answers are available only to their applicant and active administrators. Account approval and campus lifecycle are separate admin decisions; campus profiles offer an explicit status save that refreshes active statistics scopes. Email delivery still requires a verified real recipient and configured sender.
 
 University branding covers all 48 named institutions/campus entries, with a neutral badge for the generic Colleges group. [Official asset provenance](public/university-brands/SOURCES.md) records each source. The [map research](docs/map-location-provenance.md) covers all 48 named university reference points. The UK outline and pins share a Mercator projection; nearby pins are never geographically displaced. Whole UK, London and selected-campus zoom controls aid navigation. Colleges has no invented location. Reference points do not claim to be confirmed KOC fellowship venues.
+
+## Public requests, shared forms and security verification
+
+The browser accepts JPG, PNG or WebP face photos up to 5 MiB, scales them to at most 1024 pixels on either side and re-encodes PNG up to 2 MiB before sending multipart application details and photo. Canvas re-encoding removes source metadata. A changed answer or photo gets a new request ID; identical retries retain the same ID and normalized photo. Public submissions omit login cookies and never create a session. Photos are identification aids for human review; the app does not perform face recognition.
+
+Active administrators use the same full **Campus weekly feedback** and **Cluster report** question templates as campus and cluster leads. They select an active campus or a cluster with active campuses. The server records the actual administrator identity, validates scope and all conditional answers, and retains idempotent retry protection. Stats editors keep their statistics form; selecting a university never impersonates its lead.
+
+Verification combines frontend tests, typechecking, lint, framework builds and disposable database authorization tests. The account model has administrator, stats editor, campus rep and cluster lead roles; pending/rejected accounts are restricted. Demo statistics and imported trainees are not dummy login accounts. Passing mocked authentication and role tests does not prove a real end-to-end login for every hosted account.
+
+At the latest dependency check, production dependencies had no reported npm audit vulnerabilities. Eight development dependency entries still derive from an unfixed `braces` 3.0.3 denial-of-service advisory; avoid processing untrusted glob patterns in local build/lint tooling. Incompatible dependency downgrades were not applied. Audit results are a point-in-time check, not a promise that the website is fully secure. Authorization relies on server-side checks and RLS; readable material cannot be guaranteed immune to operating-system screenshots or recording.

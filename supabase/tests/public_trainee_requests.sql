@@ -1,0 +1,41 @@
+begin;
+create temp table request_fixture(id uuid,admin_id uuid,other_id uuid,path text);
+do $$
+declare admin_id uuid:=gen_random_uuid();other_id uuid:=gen_random_uuid();request uuid:=gen_random_uuid();sha text:=repeat('a',64);photo text; a jsonb; saved public.lead_applications; n int; users_before int;
+begin
+ insert into auth.users(id,email,raw_app_meta_data) values(admin_id,'photo-admin@example.org','{"koc_role":"admin"}'),(other_id,'photo-other@example.org','{}');
+ update public.profiles set status='active',role='admin' where id=admin_id;
+ select count(*) into users_before from auth.users;
+ a:=jsonb_build_object('fullName','Public Trainee','kind','new','campusId',null,'newUniversityName','Private Photo Test University','newUniversityCity','London','course','Physics','studyYear',2,'motivation','Support students through fellowship.','experience','Served on a fellowship prayer team.','availability','Tuesday evenings','plan','Start with prayer and invite students.');
+ if public.completed_public_lead_request(request,a,sha) is not null then raise exception 'Unsubmitted request exists';end if;
+ photo:=request::text||'/'||sha||'/'||gen_random_uuid()::text||'.png';
+ begin perform public.persist_public_lead_request(a,request,photo,sha);raise exception 'Missing photo accepted';exception when sqlstate '22023' then null;end;
+ insert into storage.objects(bucket_id,name,metadata) values('trainee-photos',photo,'{"mimetype":"image/png","size":200}');
+ begin perform public.persist_public_lead_request(a||'{"password":"secret"}',request,photo,sha);raise exception 'Credentials accepted';exception when sqlstate '22023' then null;end;
+ saved:=public.persist_public_lead_request(a,request,photo,sha);
+ if saved.user_id is not null or saved.status<>'pending' or saved.photo_path<>photo or (select count(*) from auth.users)<>users_before then raise exception 'Request created an account or lost photo';end if;
+ if (select lifecycle_status from public.campuses where id=saved.campus_id)<>'in_process' then raise exception 'Campus activated';end if;
+ select count(*) into n from public.notifications where application_id=saved.id;
+ if n<1 or public.completed_public_lead_request(request,a,sha)<>saved.id or (public.persist_public_lead_request(a,request,photo,sha)).id<>saved.id or (select count(*) from public.notifications where application_id=saved.id)<>n then raise exception 'Retry duplicates';end if;
+ begin perform public.completed_public_lead_request(request,a,repeat('b',64));raise exception 'Changed photo accepted';exception when sqlstate '22023' then null;end;
+ begin perform public.completed_public_lead_request(request,a||'{"fullName":"Another Person"}',sha);raise exception 'Changed answers accepted';exception when sqlstate '22023' then null;end;
+ if has_function_privilege('anon','public.persist_public_lead_request(jsonb,uuid,text,text)','execute') or has_function_privilege('authenticated','public.completed_public_lead_request(uuid,jsonb,text)','execute') or has_function_privilege('service_role','public.persist_lead_application(uuid,jsonb,uuid)','execute') then raise exception 'Endpoint grants unsafe';end if;
+ insert into request_fixture values(saved.id,admin_id,other_id,photo);
+ perform set_config('request.jwt.claim.sub',other_id::text,true);
+ begin perform public.review_lead_request(saved.id,'approved',null);raise exception 'Nonadmin approved';exception when insufficient_privilege then null;end;
+end $$;
+grant select on request_fixture to authenticated;
+set local role authenticated;
+do $$ begin if exists(select 1 from public.lead_applications where id=(select id from request_fixture)) or exists(select 1 from storage.objects where bucket_id='trainee-photos') then raise exception 'Private request exposed';end if;end $$;
+reset role;
+select set_config('request.jwt.claim.sub',(select admin_id::text from request_fixture),true);
+set local role authenticated;
+do $$ declare saved public.lead_applications;begin
+ if not exists(select 1 from storage.objects where name=(select path from request_fixture)) then raise exception 'Admin photo inaccessible';end if;
+ saved:=public.review_lead_request((select id from request_fixture),'approved','Reviewed photograph and request.');
+ if saved.reviewed_by<>(select admin_id from request_fixture) or saved.reviewed_at is null or saved.status<>'approved' then raise exception 'Review audit missing';end if;
+ begin perform public.review_lead_request(saved.id,'rejected','Changed');raise exception 'Final decision overwritten';exception when sqlstate '22023' then null;end;
+ begin insert into storage.objects(bucket_id,name) values('trainee-photos','arbitrary.png');raise exception 'Browser photo write accepted';exception when insufficient_privilege then null;end;
+end $$;
+reset role;
+rollback;

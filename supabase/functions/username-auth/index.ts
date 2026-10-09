@@ -8,9 +8,6 @@ const emailConfigured=Boolean(smtpHost&&smtpPort===465&&smtpUser&&smtpPassword&&
 const transport=emailConfigured?nodemailer.createTransport({host:smtpHost,port:465,secure:true,auth:{user:smtpUser!,pass:smtpPassword!},tls:{minVersion:'TLSv1.2',rejectUnauthorized:true},connectionTimeout:5000,greetingTimeout:5000,socketTimeout:10000,disableFileAccess:true,disableUrlAccess:true}):null;
 Deno.serve(createUsernameAuthHandler({publishableKey:'sb_publishable_C2z55xhqXzGgj9rqjkHj5g_uetKwEYC',
  claim:async(identity,action)=>{const {data,error}=await service.rpc('claim_username_auth',{p_identity:identity,p_action:action});if(error)throw error;return data===true;},
- create:async input=>{const {data,error}=await service.auth.admin.createUser({email:`${crypto.randomUUID()}@accounts.kocm.invalid`,password:input.password,email_confirm:true,user_metadata:{full_name:input.fullName,campus_id:input.campusId}});if(error||!data.user)throw new Error('Create failed.');return data.user.id;},
- assign:async(id,username,campusId)=>{const {error}=await service.rpc('assign_pending_username',{p_user_id:id,p_username:username,p_campus_id:campusId});if(error)throw error;},
- remove:async id=>{const {error}=await service.auth.admin.deleteUser(id);if(error)throw error;},
  resolve:async username=>{const {data,error}=await service.rpc('resolve_username_login',{p_username:username});if(error)throw error;return typeof data==='string'?data:null;},
  owner:async token=>{const client=createClient(url,anonKey,{auth});const {data,error}=await client.auth.getUser(token);if(error||!data.user?.email)throw new Error('Owner not verified.');return {id:data.user.id,email:data.user.email};},
  provePassword:async(owner,password)=>{const client=createClient(url,anonKey,{auth});try{const {data,error}=await client.auth.signInWithPassword({email:owner.email,password});if(error||data.user?.id!==owner.id)throw new Error('Password not verified.');}finally{await client.auth.signOut({scope:'local'});}},

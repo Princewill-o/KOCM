@@ -11,6 +11,6 @@ let client: SupabaseClient | undefined;
 
 /** Browser Supabase client. Sessions live in secure cookies managed by @supabase/ssr. */
 export function supabase(): SupabaseClient {
-  client ??= createBrowserClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+  client ??= createBrowserClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY,{cookieOptions:{secure:typeof window==='undefined'||window.location.protocol==='https:',sameSite:'lax',path:'/'}});
   return client;
 }

@@ -1,1 +1,1 @@
-{"imports":{"@supabase/supabase-js":"npm:@supabase/supabase-js@2.117.2","zod":"npm:zod@3.25.76"}}
+{"imports":{"@supabase/supabase-js":"npm:@supabase/supabase-js@2.117.2","zod":"npm:zod@3.25.76","pngjs":"npm:pngjs@7.0.0"}}

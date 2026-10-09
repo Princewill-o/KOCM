@@ -1,5 +1,6 @@
 import vinext from "vinext";
 import { defineConfig } from "vite";
+import { fileURLToPath } from "node:url";
 import hostingConfig from "./.openai/hosting.json";
 import { readExecutionProfile } from "./scripts/execution-profile.mjs";
 import { sites } from "./build/sites-vite-plugin";
@@ -51,6 +52,7 @@ export default defineConfig(async () => {
   const { cloudflare } = await import("@cloudflare/vite-plugin");
 
   return {
+    tsconfig: fileURLToPath(new URL("./tsconfig.json", import.meta.url)),
     server: {
       // Vite 8 console forwarding can recursively reject before HMR connects.
       // Keep diagnostics in the browser without forwarding them over the socket.

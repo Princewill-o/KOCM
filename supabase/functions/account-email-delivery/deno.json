@@ -1,7 +1,9 @@
 {
   "imports": {
     "@supabase/supabase-js": "npm:@supabase/supabase-js@2.117.2",
-    "nodemailer": "npm:nodemailer@7.0.11"
+    "nodemailer": "npm:nodemailer@10.0.16"
   },
-  "compilerOptions": { "strict": true }
+  "compilerOptions": {
+    "strict": true
+  }
 }

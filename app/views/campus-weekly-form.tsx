@@ -6,16 +6,16 @@ import {buildWeeks,deadlineFor,formatDate,type Season} from '@/lib/reporting';
 import {campusWeeklySchema,campusWeeklySections,sanitizeCampusWeekly,type CampusWeeklyAnswers} from '@/lib/campus-weekly-form';
 import {submitCampusWeeklyFeedback} from '@/lib/campus-weekly';
 type Props={season:Season;profile:Profile;campuses:Campus[];campusId?:string;setCampusId?:(id:string)=>void;initialWeek?:string};
-export default function CampusWeeklyForm({season,profile,campuses,initialWeek}:Props){
- const campus=campuses.find(item=>item.id===profile.campus_id);const weeks=buildWeeks(season,[]).filter(week=>week.status!=='upcoming');
- const [week,setWeek]=useState(initialWeek??weeks.at(-1)?.weekEnding??'');
+export default function CampusWeeklyForm({season,profile,campuses,campusId,initialWeek}:Props){
+ const campus=campuses.find(item=>item.id===(profile.role==='admin'?campusId:profile.campus_id));const weeks=buildWeeks(season,[]).filter(week=>week.status!=='upcoming');
+ const [week,setWeek]=useState(initialWeek||weeks.at(-1)?.weekEnding||'');
  const [draft,setDraft]=useState<Record<string,string>>({evangelismZeroReason:'',incidentNotes:'',lateReason:''});const [answers,setAnswers]=useState<CampusWeeklyAnswers|null>(null);const [errors,setErrors]=useState<Record<string,string>>({});const [busy,setBusy]=useState(false);const [error,setError]=useState('');const [saved,setSaved]=useState(false);const [requestId,setRequestId]=useState<string|null>(null);
  const late=Boolean(week&&new Date()>=deadlineFor(week,season));
  function change(key:string,value:string){setDraft(previous=>({...previous,[key]:value}));setSaved(false);setRequestId(null);}
  function review(event:React.FormEvent){event.preventDefault();setError('');const input={...draft};if(input.holyGhostBaptism==='no')delete input.tonguesRecipients;const result=campusWeeklySchema.safeParse(input);const issues:Record<string,string>={};if(!result.success){for(const issue of result.error.issues)issues[String(issue.path[0])]=issue.message;}if(late&&!draft.lateReason?.trim())issues.lateReason='Explain why this submission is late.';if(!week)issues.week='Choose a reporting week.';setErrors(issues);if(result.success&&!Object.keys(issues).length){setAnswers(sanitizeCampusWeekly(result.data));setRequestId(previous=>previous??crypto.randomUUID());}}
- async function submit(){if(!answers||!requestId||busy)return;setBusy(true);setError('');try{await submitCampusWeeklyFeedback(week,answers,requestId);setSaved(true);setAnswers(null);}catch(reason){setError(reason instanceof Error?reason.message:'Submission failed. Please retry.');}finally{setBusy(false);}}
- if(profile.role!=='campus'||profile.status!=='active')return <div className="panel">An approved campus lead account is required.</div>;
- if(!campus||campus.is_active===false)return <div className="panel">Your assigned campus is unavailable for reporting. Contact an administrator.</div>;
+ async function submit(){if(!answers||!requestId||busy)return;setBusy(true);setError('');try{await submitCampusWeeklyFeedback(week,answers,requestId,profile.role==='admin'?campus?.id:undefined);setSaved(true);setAnswers(null);}catch(reason){setError(reason instanceof Error?reason.message:'Submission failed. Please retry.');}finally{setBusy(false);}}
+ if(!['campus','admin'].includes(profile.role)||profile.status!=='active')return <div className="panel">An approved campus lead account is required.</div>;
+ if(!campus||campus.is_active===false||campus.lifecycle_status==='inactive'||campus.lifecycle_status==='in_process')return <div className="panel">Your assigned campus is unavailable for reporting. Contact an administrator.</div>;
  return <section className="campus-weekly-form"><div className="page-heading"><div><h1>Campus weekly feedback</h1><p>Report fellowship, prayer, evangelism and church activity for your campus.</p></div></div>
  {saved&&<div role="status" className="panel">Your campus weekly feedback was submitted successfully.</div>}
  {error&&<div role="alert" className="panel">{error}</div>}

@@ -13,6 +13,7 @@ import Overview from './views/overview';
 import CampusView from './views/campus-view';
 import CampusNetwork from './views/campus-network';
 import ReportForm from './views/report-form';
+import AdminReportForms from './views/admin-report-forms';
 import CampusWeeklyForm from './views/campus-weekly-form';
 import CampusFeedbackRecords from './views/campus-feedback-records';
 import ClusterReportForm from './views/cluster-report-form';
@@ -27,7 +28,7 @@ import AgentDock from '@/components/ui/agent-dock';
 
 export type { Tab } from '@/lib/access';
 import { tabsFor, statsCampuses, navigationFor, type Tab } from '@/lib/access';
-import { listTrendReports, unreadNotificationCount } from '@/lib/platform';
+import { listTrendReports, unreadNotificationCount, listClusters, type Cluster } from '@/lib/platform';
 import type { Report } from '@/lib/koc';
 import Grades from './views/grades';
 import Contacts from './views/contacts';
@@ -49,10 +50,13 @@ function QuarterView({campuses}: {campuses: Campus[]}) {
   return <QuarterlyTrends campuses={campuses} reports={reports} loading={loading} error={error} />;
 }
 
+export function ApprovalAccountIdentity({profile}:{profile:Pick<Profile,'full_name'|'username'>}){return <p>Signed in as {profile.username?`@${profile.username}`:profile.full_name}</p>;}
+
 export default function Dashboard() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [season, setSeason] = useState<Season | null>(null);
   const [campuses, setCampuses] = useState<Campus[]>([]);
+  const [clusters,setClusters] = useState<Cluster[]>([]);
   const [tab, setTab] = useState<Tab>('overview');
   const [campusId, setCampusId] = useState('');
   const [weekEnding, setWeekEnding] = useState('');
@@ -71,8 +75,8 @@ export default function Dashboard() {
       setTab(initialTab);
       if (fromHash && fromHash !== initialTab) history.replaceState(null, '', `#${initialTab}`);
       if (p.status === 'active') {
-        const [s, c] = await Promise.all([currentSeason(), listCampuses()]);
-        setSeason(s); setCampuses(c);
+        const [s, c,cl] = await Promise.all([currentSeason(), listCampuses(),p.role==='admin'?listClusters():Promise.resolve([])]);
+        setSeason(s); setCampuses(c);setClusters(cl);
         const visible = statsCampuses(p, c);
         setCampusId(prev => visible.some(c => c.id === prev) ? prev : visible[0]?.id ?? '');
       }
@@ -149,7 +153,7 @@ export default function Dashboard() {
             <p>{profile.status === 'pending'
               ? `An administrator will verify your access to ${profile.campus?.name ?? 'your university'}. Your campus statistics will appear here once approved.`
               : 'Please contact your KOC administrator to confirm your university and access.'}</p>
-            <p>Signed in as {profile.email}</p>
+            <ApprovalAccountIdentity profile={profile}/>
             <button className="button button-yellow" onClick={() => window.location.reload()}>Refresh status</button>
           </section>
           <ProfileView profile={profile} onChange={load} />
@@ -161,8 +165,9 @@ export default function Dashboard() {
           {tab === 'campus' && !visibleCampuses.length && <section className="panel padded"><h1>No campuses assigned yet</h1><p>An administrator must assign your campus or cluster before its statistics appear.</p></section>}
           {tab === 'campus' && !!visibleCampuses.length && <CampusView key={campusId} season={season} profile={profile} campuses={visibleCampuses} campusId={campusId} setCampusId={setCampusId} jump={jump} />}
           {tab === 'enter' && profile.role === 'cluster' && <><ClusterReportForm key={weekEnding} profile={profile} campuses={visibleCampuses} season={season} initialWeek={weekEnding || undefined} /><ClusterReportRecords campuses={visibleCampuses} /></>}
+          {tab === 'enter' && profile.role === 'admin' && <AdminReportForms key={weekEnding} season={season} profile={profile} campuses={visibleCampuses} clusters={clusters} campusId={campusId} setCampusId={setCampusId} initialWeek={weekEnding || undefined} />}
+          {tab === 'enter' && profile.role === 'editor' && <ReportForm season={season} profile={profile} campuses={visibleCampuses} campusId={campusId} setCampusId={setCampusId} initialWeek={weekEnding} />}
           {tab === 'enter' && profile.role !== 'cluster' && profile.role !== 'campus' && <ClusterReportRecords campuses={visibleCampuses} />}
-          {tab === 'enter' && profile.role !== 'cluster' && profile.role !== 'campus' && <ReportForm season={season} profile={profile} campuses={visibleCampuses} campusId={campusId} setCampusId={setCampusId} initialWeek={weekEnding} />}
           {tab === 'enter' && profile.role === 'campus' && <CampusWeeklyForm season={season} profile={profile} campuses={visibleCampuses} campusId={campusId} setCampusId={setCampusId} initialWeek={weekEnding} />}
           {tab === 'enter' && <CampusFeedbackRecords campusId={profile.role === 'campus' ? profile.campus_id ?? undefined : undefined} />}
           {tab === 'map' && profile.role === 'admin' && <CampusNetwork jump={jump} onCampusStatusChanged={load} />}
