@@ -17,7 +17,7 @@ Administrators' main overview supports persisted academic years, mid-year report
 
 | Role | Who | Can do |
 |---|---|---|
-| **Administrator** | Minister Bene, Pastor Awo, Princewill (after email confirmation) | See every campus, enter/edit any week, delete reports, approve campus reps, change anyone's role/status/email |
+| **Administrator** | Minister Bene, Pastor Awo, Princewill, Ashley, Taija Lee | See every campus, enter/edit any week, delete reports, approve campus reps, change anyone's role/status/email |
 | **Campus rep** | university representatives | Own campus reports, grades, people and materials, after approval |
 | **Cluster lead** | Modupe, Elyon, Lindsay, Naa, Zipporah, Chiedza | Submit conditional cluster reports; read scoped grades/people and review alerts |
 
